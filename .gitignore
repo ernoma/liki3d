@@ -38,7 +38,7 @@ Icon
 node_modules
 *~
 *.zip
-public/vendor
+#public/vendor
 public/fonts
 bin
 \#*\#
