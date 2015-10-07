@@ -24,14 +24,11 @@ var stats = initStats();
 
 //console.log(places);
 
-var terrainWidth = 120;
-var terrainHeight = 80;
-
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 1000 );
-camera.position.set(0, -100, 50);
+var camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
+camera.position.set(0, -500, 300);
 //camera.position.set(0, 0, 80);
-//camera.lookAt(0, 0, 0);
+camera.lookAt(0, 0, 0);
 //camera.position.z = 5;
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -45,9 +42,16 @@ document.getElementById('webgl').appendChild( renderer.domElement );
 
 var controls = new THREE.TrackballControls(camera, renderer.domElement);
 
+//var terrainWidth = 120;
+//var terrainHeight = 80;
+var terrainWidth = 120;
+var terrainHeight = 120;
 
-var origTerrainWidth = 400;
-var origTerrainHeight = 268;
+//var origTerrainWidth = 400;
+//var origTerrainHeight = 268;
+
+var origTerrainWidth = 256;
+var origTerrainHeight = 256;
 
 var heightMap = new Array(origTerrainHeight);
 for (var i = 0; i < origTerrainHeight; i++) {
@@ -72,41 +76,94 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     //var box = new THREE.Mesh(geom, mater);
     //scene.add(box);
 
-    var geometry = new THREE.PlaneGeometry(120, Math.floor(120 * (267 / 399)), 399, 267); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
-    
-    //console.log(geometry.vertices.length);
-    
-    var j = 0;
-    var k = 0;
+    //var axes = new THREE.AxisHelper(200);
+    //scene.add(axes);
 
-    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	var height = data[i] / 65535 * 5;
-	geometry.vertices[i].z = height;
-	heightMap[j][k] = height;
-	k++;
-	if (k == origTerrainWidth) {
-	    j++;
-	    k = 0;
+    var oWidth = origTerrainWidth - 1;
+    var oHeight = origTerrainHeight - 1;
+
+    var zoom = 12;
+    var minLat = 61.4020;
+    var minLng = 23.5544;
+    var maxLat = 61.5402;
+    var maxLng = 23.9971;
+
+    var tileNumbers = calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng);
+    console.log(tileNumbers);
+
+    THREE.ImageUtils.crossOrigin = '';
+
+    var xCount = tileNumbers.maxXY.x - tileNumbers.minXY.x + 1;
+    var yCount = tileNumbers.minXY.y - tileNumbers.maxXY.y + 1;
+
+    for (var x = tileNumbers.minXY.x; x <= tileNumbers.maxXY.x; x++) {
+	for (var y = tileNumbers.maxXY.y; y <= tileNumbers.minXY.y; y++) {
+	    var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
+	    
+	    var URL = 'http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png';
+	    console.log(URL);
+
+	    //var xCoord = x;
+	    //var yCoord = y;
+
+	    (function(URL, x, y) {
+	    THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
+		//console.log(x, y);
+
+		var material = new THREE.MeshPhongMaterial({
+                    map: texture
+		});
+
+		var plane = new THREE.Mesh(geometry, material);
+		var xPos = (x - tileNumbers.maxXY.x + xCount / 2 - 0.5) * terrainWidth;
+		var yPos = terrainHeight * yCount -(y - tileNumbers.maxXY.y + yCount / 2 + 0.5) * terrainHeight
+		console.log(xPos, yPos);
+		plane.position.set(xPos, yPos, 0);
+		scene.add(plane);
+	    })})(URL, x, y);
+
+	    /*var material = new THREE.MeshPhongMaterial({
+		map: THREE.ImageUtils.loadTexture('http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png'),
+	    });
+
+	    var plane = new THREE.Mesh(geometry, material);
+	    plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
+	    scene.add(plane);
+	    break;*/
 	}
+	//break;
     }
     
-    //console.log("done modifying z");
-    
+    /*var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
+
+    var x = 2321;
+    var y = 1153;
     var material = new THREE.MeshPhongMaterial({
-	map: THREE.ImageUtils.loadTexture('/images/tampere_terrain.jpg'),
+        map: THREE.ImageUtils.loadTexture('http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png'),
+    });
+
+    var plane = new THREE.Mesh(geometry, material);
+    //plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
+    scene.add(plane);*/
+
+
+    
+    console.log("done modifying z");
+    
+    //var material = new THREE.MeshPhongMaterial({
+//	map: THREE.ImageUtils.loadTexture('/images/tampere_terrain.jpg'),
 	//color: 0xdddddd, 
 	//wireframe: true
-    });
+    //});
     
-    var plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
-    
-    //scene.add(new THREE.AmbientLight(0xeeeeee));
+    //modifyPlaneGeometryHeight(geometry, data);    
+
+    scene.add(new THREE.AmbientLight(0xaaaaaa));
         
     var spotLight = new THREE.SpotLight(0xffffff);
     spotLight.position.set(0, 10, 300);
     spotLight.castShadow = true;
-    spotLight.intensity = 1;
+    spotLight.intensity = 0.5;
     scene.add(spotLight);
 
     var spotLightFlare = new THREE.SpotLight(0xffffff);
@@ -187,11 +244,68 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 	allObjects.push(mesh);*/
     });
 
+
 }, function(event) {
     //console.log(event);
 }, function (event) {
     console.log(event);
 });
+
+function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
+    var xy = {
+	minXY: calculateTileNumber(zoom, minLat, minLng),
+	maxXY: calculateTileNumber(zoom, maxLat, maxLng)
+    };
+
+    return xy;
+}
+
+function calculateTileNumber(zoom, lat, lon) {
+
+    var xy = {
+        x: undefined,
+        y: undefined,
+    };
+
+    var xtile = Math.floor((lon + 180) / 360 * (1<<zoom)) ;
+    var ytile = Math.floor((1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2 * (1<<zoom));
+    if (xtile < 0)
+	xtile = 0;
+    if (xtile >= (1<<zoom))
+	xtile = ((1<<zoom)-1);
+    if (ytile < 0)
+	ytile = 0;
+    if (ytile >= (1<<zoom))
+	ytile = ((1<<zoom)-1);
+    
+    xy.x = xtile;
+    xy.y = ytile;
+
+    return xy;
+}
+
+function toRad(degrees){
+    return degrees * Math.PI / 180;
+}
+
+function modifyPlaneGeometryHeight(geometry, data) {    
+    //console.log(geometry.vertices.length);
+    
+    var j = 0;
+    var k = 0;
+
+    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
+	var height = data[i] / 65535 * 5;
+	geometry.vertices[i].z = height;
+	heightMap[j][k] = height;
+	k++;
+	if (k == origTerrainWidth) {
+	    j++;
+	    k = 0;
+	}
+    }
+}
+
 
 var projection = d3.geo.mercator()
     .translate([terrainWidth / 2, terrainHeight / 2])
