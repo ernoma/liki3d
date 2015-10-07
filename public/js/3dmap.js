@@ -29,7 +29,7 @@ var terrainHeight = 80;
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 1000 );
-camera.position.set(0, -50, 50);
+camera.position.set(0, -100, 50);
 //camera.position.set(0, 0, 80);
 //camera.lookAt(0, 0, 0);
 //camera.position.z = 5;
@@ -40,6 +40,7 @@ var renderer = new THREE.WebGLRenderer({ alpha: true });
 renderer.setSize( window.innerWidth, window.innerHeight);
 //renderer.setSize( window.innerWidth, window.innerHeight );
 //renderer.setClearColorHex( 0xffffff, 1 )
+renderer.setClearColor(new THREE.Color(0xaaaaff, 1.0));
 document.getElementById('webgl').appendChild( renderer.domElement );
 
 var controls = new THREE.TrackballControls(camera, renderer.domElement);
@@ -56,8 +57,11 @@ for (var i = 0; i < origTerrainHeight; i++) {
 //createChart();
 
 var allObjects = [];
+var clefs = [];
+var vehicles = [];
 
 var clefGeometry = undefined;
+var busGeometry = undefined;
 
 var terrainLoader = new THREE.TerrainLoader();
 terrainLoader.load('/data/tampere.bin', function(data) {
@@ -100,10 +104,30 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     //scene.add(new THREE.AmbientLight(0xeeeeee));
         
     var spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(-0, 30, 500);
+    spotLight.position.set(0, 10, 300);
     spotLight.castShadow = true;
     spotLight.intensity = 1;
     scene.add(spotLight);
+
+    var spotLightFlare = new THREE.SpotLight(0xffffff);
+    spotLightFlare.position.set(120, 610, -50);
+    spotLightFlare.castShadow = false;
+    spotLightFlare.intensity = 1;
+    scene.add(spotLightFlare);
+
+    var textureFlare0 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare0.png");
+    var textureFlare3 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare3.png");
+
+    var flareColor = new THREE.Color(0xffaacc);
+    var lensFlare = new THREE.LensFlare(textureFlare0, 200, 0.0, THREE.AdditiveBlending, flareColor);
+
+    lensFlare.add(textureFlare3, 60, 0.6, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 0.7, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 120, 0.9, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 1.0, THREE.AdditiveBlending);
+    
+    lensFlare.position.copy(spotLightFlare.position);
+    scene.add(lensFlare);
 
     /*for (var i = 0; i < places.features.length; i++) {
 	var height = 0.5;
@@ -125,7 +149,7 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     }*/
     
     var $loading = $('#loading').hide();
-    
+
     var loader = new THREE.STLLoader();
 
     loader.load("/3d/clef.stl", function (geometry) {
@@ -135,8 +159,34 @@ terrainLoader.load('/data/tampere.bin', function(data) {
         //var mat = new THREE.MeshLambertMaterial({color: 0x7777ff});
         //group = new THREE.Mesh(geometry, mat);
 
-	showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
     });
+
+    loader.load("/3d/bus.stl", function (geometry) {
+        console.log(geometry);
+	busGeometry = geometry;
+
+	//setInterval(showBusses, 1000);
+
+	/*var mat = new THREE.MeshPhongMaterial({color: 0x294f9a, specular: 0xffffff, shininess: 160, metal: true});
+        var mesh = new THREE.Mesh(geometry, mat);
+	//console.log(mesh);
+	mesh.scale.set(0.0001, 0.0001, 0.0001);
+	//console.log(mesh);
+        var box = new THREE.Box3().setFromObject( mesh );
+        console.log( box.min, box.max, box.size() );
+        mesh.rotation.x = 0.5 * Math.PI;
+        //console.log(mesh);
+	var height = 0.25967699344000716;
+	coord = [52, 34];
+	var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+        var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+	var tcoord = translate(coord);
+	mesh.position.set(tcoord[0], tcoord[1], heightMap[y][x] + height / 2);
+	scene.add(mesh);
+	allObjects.push(mesh);*/
+    });
+
 }, function(event) {
     //console.log(event);
 }, function (event) {
@@ -147,8 +197,67 @@ var projection = d3.geo.mercator()
     .translate([terrainWidth / 2, terrainHeight / 2])
     .scale((terrainHeight + terrainWidth) / 2 * 180)
     .rotate([-26, 0, 0])
-    .center([23.75189 - 26, 61.48865]); // mercator: 8738897, 2644048;
+    .center([23.75189 - 26, 61.48865]); // mercator: 8738897 - x, 2644048;
     
+
+function showBusses() {
+    var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
+    
+    $.getJSON(URL, function (data) {
+        //console.log(data);
+
+	var journeys = data.Siri.ServiceDelivery.VehicleMonitoringDelivery[0].VehicleActivity;
+	//console.log(journeys);
+
+	// TODO remove journeys that do not exist anymore
+
+	for (var i = 0; i < journeys.length; i++) {
+	    var found = false;
+	    for (var j = 0; j < vehicles.length; j++) {
+		if (journeys[i].MonitoredVehicleJourney.VehicleRef.value == vehicles[j].journey.MonitoredVehicleJourney.VehicleRef.value) {
+		    found = true;
+		    // update mesh position
+		    coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
+                    var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+                    var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+			var tcoord = translate(coord);
+			vehicles[j].position.set(tcoord[0], tcoord[1], heightMap[y][x] + height / 2);
+			vehicles[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
+		    }
+		    break;
+		}
+	    }
+	    if (!found) {
+		// new vehicle, add to scene
+		var mat = new THREE.MeshPhongMaterial({color: 0x294f9a, specular: 0xffffff, shininess: 160, metal: true});
+		var mesh = new THREE.Mesh(busGeometry, mat);
+		//console.log(mesh);
+		mesh.scale.set(0.0001, 0.0001, 0.0001);
+		//console.log(mesh);
+		//var box = new THREE.Box3().setFromObject( mesh );
+		//console.log( box.min, box.max, box.size() );
+		mesh.rotation.x = 0.5 * Math.PI;
+		//console.log(mesh);
+		var height = 0.25967699344000716;
+		coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
+		var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+		var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+		//console.log(x, y);
+		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+		    var tcoord = translate(coord);
+		    mesh.position.set(tcoord[0], tcoord[1], heightMap[y][x] + height / 2);
+		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
+		    mesh.journey = journeys[i];
+		    vehicles.push(mesh);
+		    scene.add(mesh);
+		    allObjects.push(mesh);
+		}
+	    }
+	}
+    });
+}
+
 var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
 
 function showTeostoVenues(URL) {
@@ -181,7 +290,7 @@ function getVenuesData(data, i) {
 		    }*/
 		    if (!found) {
 
-			var height = 3.7648086547851562;
+			var height = 3.7648086547851562 * 0.4;
 		    
 			/*var textGeomOptions = {
 			  size: 0.5,
@@ -200,6 +309,7 @@ function getVenuesData(data, i) {
 			mesh.venue = result.venue;
 			//var box = new THREE.Box3().setFromObject( mesh );
 			//console.log( box.min, box.max, box.size() );
+			mesh.scale.set(0.4, 0.4, 0.4);
 			mesh.rotation.x = 0.5 * Math.PI;
 
 			//console.log(mesh);
@@ -215,6 +325,7 @@ function getVenuesData(data, i) {
 			    mesh.position.set(tcoord[0], tcoord[1], height / 2 + heightMap[y][x]);
 			    
 			    scene.add(mesh);
+			    clefs.push(mesh);
 			    allObjects.push(mesh);
 			}
 		    }
@@ -243,6 +354,10 @@ function createMesh(geom, imageFileName) {
 
 function render() {
     stats.update();
+
+    for (var i = 0; i < clefs.length; i++) {
+	clefs[i].rotation.y += 0.01;
+    }
 
     controls.update();
     requestAnimationFrame(render);
@@ -280,7 +395,7 @@ var projector = new THREE.Projector();
 
 function onClick(event) {
 
-    console.log(event);
+    //console.log(event);
 
     if (event.which == 1) {
 
@@ -292,8 +407,8 @@ function onClick(event) {
 	var intersects = raycaster.intersectObjects(allObjects);
 
 	for (var i = 0; i < intersects.length; i++) {
-            console.log(intersects[0]);
-	    console.log(intersects[0].object.venue.name);
+            //console.log(intersects[0]);
+	    //console.log(intersects[0].object.venue.name);
 
             intersects[i].object.material.transparent = true;
             intersects[i].object.material.opacity = 0.1;
@@ -303,29 +418,3 @@ function onClick(event) {
 
 $( window ).click(onClick);
 
-var tube = undefined;
-
-function onDocumentMouseMove(event) {
-        var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( (event.clientY - 50) / (window.innerHeight)) * 2 + 1);
-        vector = vector.unproject(camera);
-	
-        var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-        var intersects = raycaster.intersectObjects(allObjects);
-	
-        if (intersects.length > 0) {
-	    
-            var points = [];
-            points.push(new THREE.Vector3(-30, 39.8, 30));
-            points.push(intersects[0].point);
-	    
-            var mat = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: false, opacity: 0.6});
-            var tubeGeometry = new THREE.TubeGeometry(new THREE.SplineCurve3(points), 60, 0.001);
-	    
-            if (tube) scene.remove(tube);
-	    
-            tube = new THREE.Mesh(tubeGeometry, mat);
-            scene.add(tube);
-        }
-}
-
-//$( window ).mousemove(onDocumentMouseMove);
