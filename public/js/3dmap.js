@@ -117,7 +117,7 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 		var plane = new THREE.Mesh(geometry, material);
 		var xPos = (x - tileNumbers.maxXY.x + xCount / 2 - 0.5) * terrainWidth;
 		var yPos = terrainHeight * yCount -(y - tileNumbers.maxXY.y + yCount / 2 + 0.5) * terrainHeight
-		console.log(xPos, yPos);
+		//console.log(xPos, yPos);
 		plane.position.set(xPos, yPos, 0);
 		scene.add(plane);
 	    })})(URL, x, y);
@@ -145,7 +145,6 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     var plane = new THREE.Mesh(geometry, material);
     //plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
     scene.add(plane);*/
-
 
     
     console.log("done modifying z");
@@ -186,35 +185,18 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     lensFlare.position.copy(spotLightFlare.position);
     scene.add(lensFlare);
 
-    /*for (var i = 0; i < places.features.length; i++) {
-	var height = 0.5;
-	
-	var place = places.features[i];
-
-	var boxGeometry = new THREE.BoxGeometry(0.5, 0.5, height);
-	var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 3))]);
-
-	var coord = projection([place.geometry.coordinates[0], place.geometry.coordinates[1]]); x, y
-	var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-	var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-    
-	if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-	    var tcoord = translate(coord);
-	    mesh.position.set(tcoord[0], tcoord[1], height / 2 + heightMap[y][x]);
-	    scene.add(mesh);
-	}
-    }*/
-    
     var $loading = $('#loading').hide();
 
     var loader = new THREE.STLLoader();
+
+    showLandmarks();
+
+    showRoads();
 
     loader.load("/3d/clef.stl", function (geometry) {
         //console.log(geometry);
 	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	clefGeometry = geometry;
-        //var mat = new THREE.MeshLambertMaterial({color: 0x7777ff});
-        //group = new THREE.Mesh(geometry, mat);
 
 	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
     });
@@ -224,24 +206,6 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 	busGeometry = geometry;
 
 	//setInterval(showBusses, 1000);
-
-	/*var mat = new THREE.MeshPhongMaterial({color: 0x294f9a, specular: 0xffffff, shininess: 160, metal: true});
-        var mesh = new THREE.Mesh(geometry, mat);
-	//console.log(mesh);
-	mesh.scale.set(0.0001, 0.0001, 0.0001);
-	//console.log(mesh);
-        var box = new THREE.Box3().setFromObject( mesh );
-        console.log( box.min, box.max, box.size() );
-        mesh.rotation.x = 0.5 * Math.PI;
-        //console.log(mesh);
-	var height = 0.25967699344000716;
-	coord = [52, 34];
-	var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-        var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-	var tcoord = translate(coord);
-	mesh.position.set(tcoord[0], tcoord[1], heightMap[y][x] + height / 2);
-	scene.add(mesh);
-	allObjects.push(mesh);*/
     });
 
 
@@ -250,6 +214,58 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 }, function (event) {
     console.log(event);
 });
+
+function showLandmarks() {
+    coord = translate(projection([23.743183, 61.504961]));// Näsinneula 61.504961, 23.743183
+    console.log(coord);
+
+    var material = new THREE.MeshBasicMaterial({
+        color: 0x00ffff
+    });
+    var radius = 1;
+    var segments = 32;
+    var circleGeometry = new THREE.CircleGeometry( radius, segments );
+    console.log(circleGeometry.vertices.length);
+    var circle = new THREE.Mesh( circleGeometry, material );
+    //circle.position.set(60, 40, 6); // top left corner above map
+    //scene.add( circle );
+
+    circle.position.set(coord[0], coord[1], 3.3);
+    scene.add( circle );
+}
+
+function showRoads() {
+    $.getJSON("/data/tampere_roads.json", function(data) {
+        console.log(data);
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x000000,
+            linewidth: 50
+        });
+
+        for (var i = 0; i < data.features.length; i++) {
+            if (data.features[i].geometry.type == 'LineString') {
+                var geometry = new THREE.Geometry();
+                var coordinates = data.features[i].geometry.coordinates;
+                for (var j = 0; j < coordinates.length; j++) {
+                    coord = projection([coordinates[j][0], coordinates[j][1]]);
+                    //var x = coord[0];
+                    //x = Math.round(x / terrainWidth * origTerrainWidth);
+                    //var y = coord[1];
+                    //y = Math.round(y / terrainHeight * origTerrainHeight);
+                    //if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+                        var tcoord = translate(coord);
+                        var vector = new THREE.Vector3(tcoord[0], tcoord[1], 0.5 /*heightMap[y][x] + 0.5 * heightMap[y][x]*/);
+                        geometry.vertices.push(vector);
+                        //road_point_locations.push(vector);
+                    //}
+                }
+                var line = new THREE.Line(geometry, material);
+                scene.add(line);
+            }
+        }
+    });
+}
 
 function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
     var xy = {
@@ -308,10 +324,10 @@ function modifyPlaneGeometryHeight(geometry, data) {
 
 
 var projection = d3.geo.mercator()
-    .translate([terrainWidth / 2, terrainHeight / 2])
-    .scale((terrainHeight + terrainWidth) / 2 * 180)
-    .rotate([-26, 0, 0])
-    .center([23.75189 - 26, 61.48865]); // mercator: 8738897 - x, 2644048;
+    .translate([(terrainWidth+3) / 2, (terrainHeight-5 + terrainHeight / 2) / 2])
+    .scale((terrainHeight + terrainWidth) / 2 * 650)
+    .rotate([-27, 0, 0])
+    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
     
 
 function showBusses() {
