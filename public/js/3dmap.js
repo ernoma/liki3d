@@ -83,10 +83,10 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     var oHeight = origTerrainHeight - 1;
 
     var zoom = 12;
-    var minLat = 61.4020;
-    var minLng = 23.5544;
-    var maxLat = 61.5402;
-    var maxLng = 23.9971;
+    var minLat = 61.2740;
+    var minLng = 23.3317;
+    var maxLat = 61.701;
+    var maxLng = 24.253;
 
     var tileNumbers = calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng);
     console.log(tileNumbers);
@@ -324,7 +324,7 @@ function modifyPlaneGeometryHeight(geometry, data) {
 
 
 var projection = d3.geo.mercator()
-    .translate([(terrainWidth+3) / 2, (terrainHeight-5 + terrainHeight / 2) / 2])
+    .translate([(terrainWidth+3) / 2, (terrainHeight-5) / 2])
     .scale((terrainHeight + terrainWidth) / 2 * 650)
     .rotate([-27, 0, 0])
     .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
