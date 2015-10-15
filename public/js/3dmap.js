@@ -76,8 +76,8 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     //var box = new THREE.Mesh(geom, mater);
     //scene.add(box);
 
-    //var axes = new THREE.AxisHelper(200);
-    //scene.add(axes);
+    var axes = new THREE.AxisHelper(200);
+    scene.add(axes);
 
     var oWidth = origTerrainWidth - 1;
     var oHeight = origTerrainHeight - 1;
@@ -95,7 +95,7 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 
     var xCount = tileNumbers.maxXY.x - tileNumbers.minXY.x + 1;
     var yCount = tileNumbers.minXY.y - tileNumbers.maxXY.y + 1;
-
+    /*
     for (var x = tileNumbers.minXY.x; x <= tileNumbers.maxXY.x; x++) {
 	for (var y = tileNumbers.maxXY.y; y <= tileNumbers.minXY.y; y++) {
 	    var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
@@ -121,18 +121,9 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 		plane.position.set(xPos, yPos, 0);
 		scene.add(plane);
 	    })})(URL, x, y);
-
-	    /*var material = new THREE.MeshPhongMaterial({
-		map: THREE.ImageUtils.loadTexture('http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png'),
-	    });
-
-	    var plane = new THREE.Mesh(geometry, material);
-	    plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
-	    scene.add(plane);
-	    break;*/
 	}
 	//break;
-    }
+    }*/
     
     /*var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
 
@@ -187,11 +178,11 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 
     var $loading = $('#loading').hide();
 
-    var loader = new THREE.STLLoader();
-
     showLandmarks();
 
     showRoads();
+
+    var loader = new THREE.STLLoader();
 
     loader.load("/3d/clef.stl", function (geometry) {
         //console.log(geometry);
@@ -219,19 +210,36 @@ function showLandmarks() {
     coord = translate(projection([23.743183, 61.504961]));// Näsinneula 61.504961, 23.743183
     console.log(coord);
 
-    var material = new THREE.MeshBasicMaterial({
+    var material = new THREE.MeshLambertMaterial({
         color: 0x00ffff
     });
-    var radius = 1;
-    var segments = 32;
-    var circleGeometry = new THREE.CircleGeometry( radius, segments );
-    console.log(circleGeometry.vertices.length);
-    var circle = new THREE.Mesh( circleGeometry, material );
+    //var radius = 1;
+    //var segments = 32;
+    //var circleGeometry = new THREE.CircleGeometry( radius, segments );
+    //console.log(circleGeometry.vertices.length);
+    //var circle = new THREE.Mesh( circleGeometry, material );
     //circle.position.set(60, 40, 6); // top left corner above map
+    //circle.position.set(coord[0], coord[1], 3.3);
     //scene.add( circle );
 
-    circle.position.set(coord[0], coord[1], 3.3);
-    scene.add( circle );
+    var loader = new THREE.OBJMTLLoader();
+    loader.load("/3d/neula.obj", "/3d/neula.mtl", function(loadedMesh) {
+	console.log(loadedMesh);
+	/*loadedMesh.children.forEach(function (child) {
+	    child.material = material;
+	    child.geometry.computeFaceNormals();
+	    child.geometry.computeVertexNormals();
+	});*/
+	//var base = loadedMesh.children[0].children[2];
+	//var hat = loadedMesh.children[0].children[5];
+	//loadedMesh.children[0].children[0].material.opacity = 1;
+	//loadedMesh.children[0].children[0].material.transparent = false;
+	
+	loadedMesh.rotation.x = Math.PI / 2;
+	loadedMesh.scale.set(10, 10, 10);
+	loadedMesh.position.set(coord[0], coord[1], 0);
+	scene.add(loadedMesh);
+    });
 }
 
 function showRoads() {

@@ -1,0 +1,62 @@
+# Blender MTL File: 'neula_finished.blend'
+# Material Count: 6
+
+newmtl BrownishGray
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.420023 0.351673 0.257044
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/BaseColor.png
+
+newmtl HatMaterial
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.221934 0.303197 0.251516
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/Hat.png
+
+newmtl HatMaterial_Hat
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.221934 0.303197 0.251516
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/Hat.png
+
+newmtl MainAreaMaterial
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/MainAreaColors.png
+
+newmtl ScenicBlack
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.013410 0.013410 0.013410
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/Scenic.png
+
+newmtl Yellow
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.500051 0.004825
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../images/textures/YellowTexture.png
