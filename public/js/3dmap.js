@@ -231,10 +231,16 @@ function showLandmarks() {
 	    child.geometry.computeVertexNormals();
 	});*/
 	//var base = loadedMesh.children[0].children[2];
-	//var hat = loadedMesh.children[0].children[5];
+	var base = loadedMesh.children[0].children[1];
+	var outsideVista = loadedMesh.children[0].children[6];
+	var hat = loadedMesh.children[0].children[4];
 	//loadedMesh.children[0].children[0].material.opacity = 1;
 	//loadedMesh.children[0].children[0].material.transparent = false;
-	
+	hat.material.shininess = 30;
+	outsideVista.material.shininess = 10;
+	base.material.shininess = 1;
+
+
 	loadedMesh.rotation.x = Math.PI / 2;
 	loadedMesh.scale.set(10, 10, 10);
 	loadedMesh.position.set(coord[0], coord[1], 0);
