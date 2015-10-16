@@ -246,6 +246,15 @@ function showLandmarks() {
 	loadedMesh.position.set(coord[0], coord[1], 0);
 	scene.add(loadedMesh);
     });
+
+    loader.load("/3d/torni.obj", "/3d/torni.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+	
+	loadedMesh.rotation.x = Math.PI / 2;
+	loadedMesh.scale.set(10, 10, 10);
+	loadedMesh.position.set(0, 0, 0);
+	scene.add(loadedMesh);
+    });
 }
 
 function showRoads() {
