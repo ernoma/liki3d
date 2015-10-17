@@ -42,6 +42,15 @@ document.getElementById('webgl').appendChild( renderer.domElement );
 
 var controls = new THREE.TrackballControls(camera, renderer.domElement);
 
+
+
+var projection = d3.geo.mercator()
+    .translate([(terrainWidth+3) / 2, (terrainHeight-5) / 2])
+    .scale((terrainHeight + terrainWidth) / 2 * 650)
+    .rotate([-27, 0, 0])
+    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
+
+
 //var terrainWidth = 120;
 //var terrainHeight = 80;
 var terrainWidth = 120;
@@ -71,110 +80,14 @@ var terrainLoader = new THREE.TerrainLoader();
 terrainLoader.load('/data/tampere.bin', function(data) {
     //console.log(data);
     
-    //var geom = new THREE.BoxGeometry(4,4,4);
-    //var mater = new THREE.MeshBasicMaterial({color: 0x0000ff, wireframe: true});
-    //var box = new THREE.Mesh(geom, mater);
-    //scene.add(box);
-
     var axes = new THREE.AxisHelper(200);
     scene.add(axes);
 
-    var oWidth = origTerrainWidth - 1;
-    var oHeight = origTerrainHeight - 1;
-
-    var zoom = 12;
-    var minLat = 61.2740;
-    var minLng = 23.3317;
-    var maxLat = 61.701;
-    var maxLng = 24.253;
-
-    var tileNumbers = calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng);
-    console.log(tileNumbers);
-
-    THREE.ImageUtils.crossOrigin = '';
-
-    var xCount = tileNumbers.maxXY.x - tileNumbers.minXY.x + 1;
-    var yCount = tileNumbers.minXY.y - tileNumbers.maxXY.y + 1;
-    /*
-    for (var x = tileNumbers.minXY.x; x <= tileNumbers.maxXY.x; x++) {
-	for (var y = tileNumbers.maxXY.y; y <= tileNumbers.minXY.y; y++) {
-	    var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
-	    
-	    var URL = 'http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png';
-	    console.log(URL);
-
-	    //var xCoord = x;
-	    //var yCoord = y;
-
-	    (function(URL, x, y) {
-	    THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
-		//console.log(x, y);
-
-		var material = new THREE.MeshPhongMaterial({
-                    map: texture
-		});
-
-		var plane = new THREE.Mesh(geometry, material);
-		var xPos = (x - tileNumbers.maxXY.x + xCount / 2 - 0.5) * terrainWidth;
-		var yPos = terrainHeight * yCount -(y - tileNumbers.maxXY.y + yCount / 2 + 0.5) * terrainHeight
-		//console.log(xPos, yPos);
-		plane.position.set(xPos, yPos, 0);
-		scene.add(plane);
-	    })})(URL, x, y);
-	}
-	//break;
-    }*/
-    
-    /*var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
-
-    var x = 2321;
-    var y = 1153;
-    var material = new THREE.MeshPhongMaterial({
-        map: THREE.ImageUtils.loadTexture('http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png'),
-    });
-
-    var plane = new THREE.Mesh(geometry, material);
-    //plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
-    scene.add(plane);*/
-
+    loadPlane();
     
     console.log("done modifying z");
-    
-    //var material = new THREE.MeshPhongMaterial({
-//	map: THREE.ImageUtils.loadTexture('/images/tampere_terrain.jpg'),
-	//color: 0xdddddd, 
-	//wireframe: true
-    //});
-    
-    //modifyPlaneGeometryHeight(geometry, data);    
 
-    scene.add(new THREE.AmbientLight(0xaaaaaa));
-        
-    var spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(0, 10, 300);
-    spotLight.castShadow = true;
-    spotLight.intensity = 0.5;
-    scene.add(spotLight);
-
-    var spotLightFlare = new THREE.SpotLight(0xffffff);
-    spotLightFlare.position.set(120, 610, -50);
-    spotLightFlare.castShadow = false;
-    spotLightFlare.intensity = 1;
-    scene.add(spotLightFlare);
-
-    var textureFlare0 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare0.png");
-    var textureFlare3 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare3.png");
-
-    var flareColor = new THREE.Color(0xffaacc);
-    var lensFlare = new THREE.LensFlare(textureFlare0, 200, 0.0, THREE.AdditiveBlending, flareColor);
-
-    lensFlare.add(textureFlare3, 60, 0.6, THREE.AdditiveBlending);
-    lensFlare.add(textureFlare3, 70, 0.7, THREE.AdditiveBlending);
-    lensFlare.add(textureFlare3, 120, 0.9, THREE.AdditiveBlending);
-    lensFlare.add(textureFlare3, 70, 1.0, THREE.AdditiveBlending);
-    
-    lensFlare.position.copy(spotLightFlare.position);
-    scene.add(lensFlare);
+    addLights();
 
     var $loading = $('#loading').hide();
 
@@ -205,6 +118,118 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 }, function (event) {
     console.log(event);
 });
+
+function loadPlane() {
+    var URL = '/images/mapbox_tampere_large.png';
+
+    THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
+	console.log(texture);
+	var geometry = new THREE.PlaneGeometry(2048, 2048, 120, 120);
+	var material = new THREE.MeshPhongMaterial({
+            map: texture
+        });
+	var plane = new THREE.Mesh(geometry, material);
+	plane.position.set(0, 0, 0);
+	scene.add(plane);
+    });
+
+    /*var oWidth = origTerrainWidth - 1;
+    var oHeight = origTerrainHeight - 1;
+
+    var zoom = 12;
+    var minLat = 61.2740;
+    var minLng = 23.3317;
+    var maxLat = 61.701;
+    var maxLng = 24.253;
+
+    var tileNumbers = calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng);
+    console.log(tileNumbers);
+
+    THREE.ImageUtils.crossOrigin = '';
+
+    var xCount = tileNumbers.maxXY.x - tileNumbers.minXY.x + 1;
+    var yCount = tileNumbers.minXY.y - tileNumbers.maxXY.y + 1;
+
+    for (var x = tileNumbers.minXY.x; x <= tileNumbers.maxXY.x; x++) {
+	for (var y = tileNumbers.maxXY.y; y <= tileNumbers.minXY.y; y++) {
+	    var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
+	    
+	    var URL = 'http://a.tiles.mapbox.com/v3/ernoma.i04d787e/' + zoom + '/' + x + '/' + y + '.png';
+	    //var URL = 'http://tiles.kartat.kapsi.fi/ortokuva/' + zoom + '/' + x + '/' + y + '.jpg';
+	    console.log(URL);
+
+	    //var xCoord = x;
+	    //var yCoord = y;
+
+	    (function(URL, x, y) {
+	    THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
+		//console.log(x, y);
+
+		var material = new THREE.MeshPhongMaterial({
+                    map: texture
+		});
+
+		var plane = new THREE.Mesh(geometry, material);
+		var xPos = (x - tileNumbers.maxXY.x + xCount / 2 - 0.5) * terrainWidth;
+		var yPos = terrainHeight * yCount -(y - tileNumbers.maxXY.y + yCount / 2 + 0.5) * terrainHeight;
+		//console.log(xPos, yPos);
+		plane.position.set(xPos, yPos, 0);
+		scene.add(plane);
+	    })})(URL, x, y);
+	}
+	//break;
+    }*/
+    
+    /*var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
+
+    var x = 2321;
+    var y = 1153;
+    var material = new THREE.MeshPhongMaterial({
+        map: THREE.ImageUtils.loadTexture('http://tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png'),
+    });
+
+    var plane = new THREE.Mesh(geometry, material);
+    //plane.position.set((x - tileNumbers.maxXY.x + xCount / 2) / 2 * terrainWidth, (y - tileNumbers.maxXY.y + yCount / 2) / 2 * terrainHeight, 0);
+    scene.add(plane);*/
+
+    //var material = new THREE.MeshPhongMaterial({
+    //	map: THREE.ImageUtils.loadTexture('/images/tampere_terrain.jpg'),
+    //color: 0xdddddd, 
+    //wireframe: true
+    //});
+    
+    //modifyPlaneGeometryHeight(geometry, data);    
+}
+
+function addLights() {
+    scene.add(new THREE.AmbientLight(0xaaaaaa));
+        
+    var spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(0, 10, 300);
+    spotLight.castShadow = true;
+    spotLight.intensity = 0.5;
+    scene.add(spotLight);
+
+    var spotLightFlare = new THREE.SpotLight(0xffffff);
+    spotLightFlare.position.set(120, 610, -50);
+    spotLightFlare.castShadow = false;
+    spotLightFlare.intensity = 1;
+    scene.add(spotLightFlare);
+
+    var textureFlare0 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare0.png");
+    var textureFlare3 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare3.png");
+
+    var flareColor = new THREE.Color(0xffaacc);
+    var lensFlare = new THREE.LensFlare(textureFlare0, 200, 0.0, THREE.AdditiveBlending, flareColor);
+
+    lensFlare.add(textureFlare3, 60, 0.6, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 0.7, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 120, 0.9, THREE.AdditiveBlending);
+    lensFlare.add(textureFlare3, 70, 1.0, THREE.AdditiveBlending);
+    
+    lensFlare.position.copy(spotLightFlare.position);
+    scene.add(lensFlare);
+}
 
 function showLandmarks() {
     coord = translate(projection([23.743183, 61.504961]));// Näsinneula 61.504961, 23.743183
@@ -243,7 +268,8 @@ function showLandmarks() {
 
 	loadedMesh.rotation.x = Math.PI / 2;
 	loadedMesh.scale.set(10, 10, 10);
-	loadedMesh.position.set(coord[0], coord[1], 0);
+	loadedMesh.position.set(0, 0, 0);
+	//loadedMesh.position.set(coord[0], coord[1], 0);
 	scene.add(loadedMesh);
     });
 
@@ -343,15 +369,7 @@ function modifyPlaneGeometryHeight(geometry, data) {
 	    k = 0;
 	}
     }
-}
-
-
-var projection = d3.geo.mercator()
-    .translate([(terrainWidth+3) / 2, (terrainHeight-5) / 2])
-    .scale((terrainHeight + terrainWidth) / 2 * 650)
-    .rotate([-27, 0, 0])
-    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
-    
+}    
 
 function showBusses() {
     var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
