@@ -20,15 +20,20 @@ var opts = {
 var target = document.getElementById('spinner');
 var spinner = new Spinner(opts).spin(target);
 
+Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
+Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
+
 var stats = initStats();
 
 //console.log(places);
 
-var scene = new THREE.Scene();
+var scene = new Physijs.Scene;
+scene.setGravity(new THREE.Vector3(0, -1000, 0));
+
 var camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
-camera.position.set(0, -500, 300);
+camera.position.set(0, 1000, 3000);
 //camera.position.set(0, 0, 80);
-camera.lookAt(0, 0, 0);
+camera.lookAt(scene.position);
 //camera.position.z = 5;
 
 var renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -53,8 +58,8 @@ var projection = d3.geo.mercator()
 
 //var terrainWidth = 120;
 //var terrainHeight = 80;
-var terrainWidth = 120;
-var terrainHeight = 120;
+var terrainWidth = 2048;
+var terrainHeight = 2048;
 
 //var origTerrainWidth = 400;
 //var origTerrainHeight = 268;
@@ -68,6 +73,8 @@ for (var i = 0; i < origTerrainHeight; i++) {
 }
 
 //createChart();
+
+var gameBoard = undefined;
 
 var allObjects = [];
 var clefs = [];
@@ -112,7 +119,6 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 	//setInterval(showBusses, 1000);
     });
 
-
 }, function(event) {
     //console.log(event);
 }, function (event) {
@@ -124,13 +130,70 @@ function loadPlane() {
 
     THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
 	console.log(texture);
-	var geometry = new THREE.PlaneGeometry(2048, 2048, 120, 120);
-	var material = new THREE.MeshPhongMaterial({
+	//var geometry = new THREE.PlaneGeometry(2048, 2048, 120, 120);
+	var geometry = new THREE.BoxGeometry(2048, 1, 2048);
+	var material = Physijs.createMaterial(new THREE.MeshPhongMaterial({
             map: texture
-        });
-	var plane = new THREE.Mesh(geometry, material);
-	plane.position.set(0, 0, 0);
-	scene.add(plane);
+        }), 0.9, 0.3);
+	var ground = new Physijs.BoxMesh(geometry, material, 0);
+
+	ground_material = Physijs.createMaterial(
+            new THREE.MeshLambertMaterial({ color: 0x00aaaa }),
+                .9, // high friction
+                .6 // low restitution
+        );
+	ground_material.transparent = true;
+	ground_material.opacity = 0.5;
+
+	var borderHeight = 200;
+
+	var borderLeft = new Physijs.BoxMesh(
+                    new THREE.BoxGeometry(2, borderHeight, 2048),
+                    ground_material,
+                    0 // mass
+            );
+
+            borderLeft.position.x = -1025;
+            borderLeft.position.y = 2;
+
+
+            ground.add(borderLeft);
+
+            var borderRight = new Physijs.BoxMesh(new THREE.BoxGeometry(2, borderHeight, 2048),
+                    ground_material,
+                    0 // mass
+            );
+            borderRight.position.x = 1025;
+            borderRight.position.y = 2;
+
+            ground.add(borderRight);
+
+
+            var borderBottom = new Physijs.BoxMesh(
+                    new THREE.BoxGeometry(2052, borderHeight, 2),
+                    ground_material,
+                    0 // mass
+            );
+
+            borderBottom.position.z = 1024;
+            borderBottom.position.y = 2;
+            ground.add(borderBottom);
+
+            var borderTop = new Physijs.BoxMesh(
+                    new THREE.BoxGeometry(2052, borderHeight, 2),
+                    ground_material,
+                    0 // mass
+            );
+
+            borderTop.position.z = -1024;
+            borderTop.position.y = 2;
+            ground.add(borderTop);
+
+	//plane.rotation.x = Math.PI * -0.5;
+	//plane.position.set(0, 0, 0);
+	scene.add(ground);
+	gameBoard = ground;
+	addBalls();
     });
 
     /*var oWidth = origTerrainWidth - 1;
@@ -198,7 +261,33 @@ function loadPlane() {
     //wireframe: true
     //});
     
-    //modifyPlaneGeometryHeight(geometry, data);    
+    //modifyPlaneGeometryHeight(geometry, data);
+}
+
+function addBalls() {
+    var friction = 0.1;
+    var restitution = 1;
+    var textures = [];
+    var texture = THREE.ImageUtils.loadTexture("/images/Love_Is_All_Bright_Logo_1024x1024.jpg");
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    textures.push(texture);
+    texture = THREE.ImageUtils.loadTexture("/images/verkosto_1024x1024.png");
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    textures.push(texture);
+    for (var i = 0; i < 5; i++) {
+	var geom = new THREE.SphereGeometry(50, 24, 24);
+	var material = new THREE.MeshPhongMaterial();
+	material.map = textures[Math.floor(Math.random()*2)];
+	var sphere = new Physijs.SphereMesh(geom, Physijs.createMaterial(material, friction, restitution));
+	sphere.material.map.repeat.set(2, 2);
+	sphere.position.set(Math.random() * terrainWidth - terrainWidth / 2, 500 + Math.random() * 5, Math.random() * terrainHeight - terrainHeight / 2);
+	sphere.rotation.z = Math.PI * Math.random() * 2;
+	sphere.rotation.x = Math.PI * Math.random() * 0.5;
+	sphere.rotation.y = Math.PI * Math.random();
+	scene.add(sphere);
+    }
 }
 
 function addLights() {
@@ -266,7 +355,7 @@ function showLandmarks() {
 	base.material.shininess = 1;
 
 
-	loadedMesh.rotation.x = Math.PI / 2;
+	//loadedMesh.rotation.x = Math.PI / 2;
 	loadedMesh.scale.set(10, 10, 10);
 	loadedMesh.position.set(0, 0, 0);
 	//loadedMesh.position.set(coord[0], coord[1], 0);
@@ -276,7 +365,7 @@ function showLandmarks() {
     loader.load("/3d/torni.obj", "/3d/torni.mtl", function(loadedMesh) {
         console.log(loadedMesh);
 	
-	loadedMesh.rotation.x = Math.PI / 2;
+	//loadedMesh.rotation.x = Math.PI / 2;
 	loadedMesh.scale.set(10, 10, 10);
 	loadedMesh.position.set(0, 0, 0);
 	scene.add(loadedMesh);
@@ -522,6 +611,7 @@ function createMesh(geom, imageFileName) {
     return mesh;
 }
 
+var direction = 1;
 
 function render() {
     stats.update();
@@ -533,6 +623,12 @@ function render() {
     controls.update();
     requestAnimationFrame(render);
     renderer.render(scene, camera);
+    gameBoard.rotation.x += 0.002 * direction;
+    gameBoard.rotation.z += 0.002 * direction;
+    if (gameBoard.rotation.x < -0.4) direction = 1;
+    if (gameBoard.rotation.x > 0.4) direction = -1;
+    gameBoard.__dirtyRotation = true;
+    scene.simulate();
 }
 
 render();
@@ -562,7 +658,7 @@ $( window ).resize(function() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-var projector = new THREE.Projector();
+//var projector = new THREE.Projector();
 
 function onClick(event) {
 
