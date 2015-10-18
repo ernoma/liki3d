@@ -47,15 +47,6 @@ document.getElementById('webgl').appendChild( renderer.domElement );
 
 var controls = new THREE.TrackballControls(camera, renderer.domElement);
 
-
-
-var projection = d3.geo.mercator()
-    .translate([(terrainWidth+3) / 2, (terrainHeight-5) / 2])
-    .scale((terrainHeight + terrainWidth) / 2 * 650)
-    .rotate([-27, 0, 0])
-    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
-
-
 //var terrainWidth = 120;
 //var terrainHeight = 80;
 var terrainWidth = 2048;
@@ -64,8 +55,15 @@ var terrainHeight = 2048;
 //var origTerrainWidth = 400;
 //var origTerrainHeight = 268;
 
-var origTerrainWidth = 256;
-var origTerrainHeight = 256;
+var origTerrainWidth = 2048;
+var origTerrainHeight = 2048;
+
+var projection = d3.geo.mercator()
+    .translate([(terrainWidth + 5) / 2, (terrainHeight + 272) / 2])
+    .scale(121500)
+    .rotate([-27, 0, 0])
+    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
+
 
 var heightMap = new Array(origTerrainHeight);
 for (var i = 0; i < origTerrainHeight; i++) {
@@ -126,7 +124,7 @@ terrainLoader.load('/data/tampere.bin', function(data) {
 });
 
 function loadPlane() {
-    var URL = '/images/mapbox_tampere_large.png';
+    var URL = '/images/osm_tampere_large.png';
 
     THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
 	console.log(texture);
@@ -193,7 +191,7 @@ function loadPlane() {
 	//plane.position.set(0, 0, 0);
 	scene.add(ground);
 	gameBoard = ground;
-	addBalls();
+	//addBalls();
     });
 
     /*var oWidth = origTerrainWidth - 1;
@@ -293,14 +291,14 @@ function addBalls() {
 function addLights() {
     scene.add(new THREE.AmbientLight(0xaaaaaa));
         
-    var spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(0, 10, 300);
+    /*var spotLight = new THREE.SpotLight(0xffffff);
+    spotLight.position.set(0, 300, 10);
     spotLight.castShadow = true;
     spotLight.intensity = 0.5;
-    scene.add(spotLight);
+    scene.add(spotLight);*/
 
     var spotLightFlare = new THREE.SpotLight(0xffffff);
-    spotLightFlare.position.set(120, 610, -50);
+    spotLightFlare.position.set(120, 610, 3000);
     spotLightFlare.castShadow = false;
     spotLightFlare.intensity = 1;
     scene.add(spotLightFlare);
@@ -321,8 +319,6 @@ function addLights() {
 }
 
 function showLandmarks() {
-    coord = translate(projection([23.743183, 61.504961]));// Näsinneula 61.504961, 23.743183
-    console.log(coord);
 
     var material = new THREE.MeshLambertMaterial({
         color: 0x00ffff
@@ -353,12 +349,14 @@ function showLandmarks() {
 	hat.material.shininess = 30;
 	outsideVista.material.shininess = 10;
 	base.material.shininess = 1;
-
-
 	//loadedMesh.rotation.x = Math.PI / 2;
 	loadedMesh.scale.set(10, 10, 10);
-	loadedMesh.position.set(0, 0, 0);
-	//loadedMesh.position.set(coord[0], coord[1], 0);
+	//loadedMesh.position.set(0, 0, 0);
+	coord = projection([23.743183, 61.504961]);// Näsinneula 61.504961, 23.743183
+	console.log(coord);
+	coord = translate(coord);
+	console.log(coord);
+	loadedMesh.position.set(coord[0], 0, coord[1]);
 	scene.add(loadedMesh);
     });
 
@@ -378,7 +376,7 @@ function showRoads() {
 
         var material = new THREE.LineBasicMaterial({
             color: 0x000000,
-            linewidth: 50
+            linewidth: 1
         });
 
         for (var i = 0; i < data.features.length; i++) {
@@ -393,7 +391,7 @@ function showRoads() {
                     //y = Math.round(y / terrainHeight * origTerrainHeight);
                     //if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
                         var tcoord = translate(coord);
-                        var vector = new THREE.Vector3(tcoord[0], tcoord[1], 0.5 /*heightMap[y][x] + 0.5 * heightMap[y][x]*/);
+                        var vector = new THREE.Vector3(tcoord[0], 0.5 /*heightMap[y][x] + 0.5 * heightMap[y][x]*/, tcoord[1]);
                         geometry.vertices.push(vector);
                         //road_point_locations.push(vector);
                     //}
@@ -623,11 +621,11 @@ function render() {
     controls.update();
     requestAnimationFrame(render);
     renderer.render(scene, camera);
-    gameBoard.rotation.x += 0.002 * direction;
+    /*gameBoard.rotation.x += 0.002 * direction;
     gameBoard.rotation.z += 0.002 * direction;
     if (gameBoard.rotation.x < -0.4) direction = 1;
     if (gameBoard.rotation.x > 0.4) direction = -1;
-    gameBoard.__dirtyRotation = true;
+    gameBoard.__dirtyRotation = true;*/
     scene.simulate();
 }
 
@@ -635,7 +633,7 @@ render();
 
 
 function translate(point) {
-  return [point[0] - (terrainWidth / 2), (terrainHeight / 2) - point[1]];
+  return [point[0] - (terrainWidth / 2), point[1] - (terrainHeight / 2)];
 }
 
 function initStats() {
