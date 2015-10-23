@@ -1,25 +1,5 @@
-# Blender MTL File: 'neula_finished.blend'
+# Blender MTL File: 'neula.blend'
 # Material Count: 8
-
-newmtl Black
-Ns 96.078431
-Ka 0.000000 0.000000 0.000000
-Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
-Ni 1.000000
-d 1.000000
-illum 2
-map_Kd textures/BaseColor.png
-
-newmtl Black_NONE
-Ns 96.078431
-Ka 0.000000 0.000000 0.000000
-Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
-Ni 1.000000
-d 1.000000
-illum 2
-map_Kd textures/Black.png
 
 newmtl BrownishGray
 Ns 96.078431
@@ -29,27 +9,15 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd textures/BaseColor.png
 
 newmtl HatMaterial
 Ns 96.078431
 Ka 0.000000 0.000000 0.000000
-Kd 0.221934 0.303197 0.251516
-Ks 0.500000 0.500000 0.500000
+Kd 0.516796 0.714015 0.588437
+Ks 0.273913 0.273913 0.273913
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd textures/Hat.png
-
-newmtl HatMaterial_BaseColor.001
-Ns 96.078431
-Ka 0.000000 0.000000 0.000000
-Kd 0.221934 0.303197 0.251516
-Ks 0.500000 0.500000 0.500000
-Ni 1.000000
-d 1.000000
-illum 2
-map_Kd textures/Hat.png
 
 newmtl MainAreaMaterial
 Ns 96.078431
@@ -65,11 +33,38 @@ newmtl ScenicBlack
 Ns 96.078431
 Ka 0.000000 0.000000 0.000000
 Kd 0.013410 0.013410 0.013410
-Ks 0.500000 0.500000 0.500000
+Ks 0.404348 0.404348 0.404348
 Ni 1.000000
 d 1.000000
 illum 2
 map_Kd textures/Scenic.png
+
+newmtl ScenicBlack_NONE
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.013410 0.013410 0.013410
+Ks 0.404348 0.404348 0.404348
+Ni 1.000000
+d 1.000000
+illum 2
+
+newmtl White
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+
+newmtl White_NONE
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
 
 newmtl Yellow
 Ns 96.078431
@@ -79,4 +74,3 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd textures/BaseColor.png

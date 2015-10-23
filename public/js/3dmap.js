@@ -39,11 +39,16 @@ camera.lookAt(scene.position);
 var renderer = new THREE.WebGLRenderer({ alpha: true });
 //console.log($('#webgl').innerWidth());
 //console.log($('#webgl').innerHeight());
-renderer.setSize( window.innerWidth, window.innerHeight);
+renderer.setSize( $('#webgl').innerWidth(), $('#webgl').innerHeight());
 //renderer.setSize( window.innerWidth, window.innerHeight );
 //renderer.setClearColorHex( 0xffffff, 1 )
 renderer.setClearColor(new THREE.Color(0xaaaaff, 1.0));
 document.getElementById('webgl').appendChild( renderer.domElement );
+
+var backgroundScene = undefined;
+var backgroundCamera = undefined;
+
+setupBackground();
 
 var controls = new THREE.TrackballControls(camera, renderer.domElement);
 
@@ -77,6 +82,7 @@ var gameBoard = undefined;
 var allObjects = [];
 var clefs = [];
 var vehicles = [];
+var landmarks = [];
 
 var clefGeometry = undefined;
 var busGeometry = undefined;
@@ -88,42 +94,15 @@ terrainLoader.load('/data/tampere.bin', function(data) {
     var axes = new THREE.AxisHelper(200);
     scene.add(axes);
 
-    loadPlane();
+    loadSceneObjects();
     
-    console.log("done modifying z");
-
-    addLights();
-
-    var $loading = $('#loading').hide();
-
-    showLandmarks();
-
-    showRoads();
-
-    var loader = new THREE.STLLoader();
-
-    loader.load("/3d/clef.stl", function (geometry) {
-        //console.log(geometry);
-	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
-	clefGeometry = geometry;
-
-	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
-    });
-
-    loader.load("/3d/bus.stl", function (geometry) {
-        console.log(geometry);
-	busGeometry = geometry;
-
-	//setInterval(showBusses, 1000);
-    });
-
 }, function(event) {
     //console.log(event);
 }, function (event) {
     console.log(event);
 });
 
-function loadPlane() {
+function loadSceneObjects() {
     var URL = '/images/osm_tampere_large.png';
 
     THREE.ImageUtils.loadTexture(URL, undefined, function (texture) {
@@ -146,52 +125,72 @@ function loadPlane() {
 	var borderHeight = 200;
 
 	var borderLeft = new Physijs.BoxMesh(
-                    new THREE.BoxGeometry(2, borderHeight, 2048),
-                    ground_material,
-                    0 // mass
-            );
+            new THREE.BoxGeometry(2, borderHeight, 2048),
+            ground_material,
+            0 // mass
+        );
+        borderLeft.position.x = -1025;
+        borderLeft.position.y = 2;
+        ground.add(borderLeft);
 
-            borderLeft.position.x = -1025;
-            borderLeft.position.y = 2;
+        var borderRight = new Physijs.BoxMesh(
+	    new THREE.BoxGeometry(2, borderHeight, 2048),
+	    ground_material,
+	    0 // mass
+	);
+        borderRight.position.x = 1025;
+        borderRight.position.y = 2;
+        ground.add(borderRight);
+	
+        var borderBottom = new Physijs.BoxMesh(
+            new THREE.BoxGeometry(2052, borderHeight, 2),
+            ground_material,
+            0 // mass
+        );
+        borderBottom.position.z = 1024;
+        borderBottom.position.y = 2;
+        ground.add(borderBottom);
 
-
-            ground.add(borderLeft);
-
-            var borderRight = new Physijs.BoxMesh(new THREE.BoxGeometry(2, borderHeight, 2048),
-                    ground_material,
-                    0 // mass
-            );
-            borderRight.position.x = 1025;
-            borderRight.position.y = 2;
-
-            ground.add(borderRight);
-
-
-            var borderBottom = new Physijs.BoxMesh(
-                    new THREE.BoxGeometry(2052, borderHeight, 2),
-                    ground_material,
-                    0 // mass
-            );
-
-            borderBottom.position.z = 1024;
-            borderBottom.position.y = 2;
-            ground.add(borderBottom);
-
-            var borderTop = new Physijs.BoxMesh(
-                    new THREE.BoxGeometry(2052, borderHeight, 2),
-                    ground_material,
-                    0 // mass
-            );
-
-            borderTop.position.z = -1024;
-            borderTop.position.y = 2;
-            ground.add(borderTop);
+        var borderTop = new Physijs.BoxMesh(
+            new THREE.BoxGeometry(2052, borderHeight, 2),
+            ground_material,
+            0 // mass
+        );
+        borderTop.position.z = -1024;
+        borderTop.position.y = 2;
+        ground.add(borderTop);
 
 	//plane.rotation.x = Math.PI * -0.5;
 	//plane.position.set(0, 0, 0);
-	scene.add(ground);
+	//scene.add(ground);
 	gameBoard = ground;
-	//addBalls();
+
+	console.log("done modifying z");
+	
+	addLights();
+
+	var $loading = $('#loading').hide();
+
+	showLandmarks();
+
+	showRoads();
+
+	var loader = new THREE.STLLoader();
+
+	loader.load("/3d/clef.stl", function (geometry) {
+            //console.log(geometry);
+	    geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
+	    clefGeometry = geometry;
+
+	    //showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	});
+
+	loader.load("/3d/bus.stl", function (geometry) {
+            console.log(geometry);
+	    busGeometry = geometry;
+
+	    //setInterval(showBusses, 1000);
+	});
     });
 
     /*var oWidth = origTerrainWidth - 1;
@@ -274,33 +273,35 @@ function addBalls() {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     textures.push(texture);
-    for (var i = 0; i < 5; i++) {
+    var margin = 100;
+    for (var i = 0; i < 10; i++) {
 	var geom = new THREE.SphereGeometry(50, 24, 24);
 	var material = new THREE.MeshPhongMaterial();
 	material.map = textures[Math.floor(Math.random()*2)];
 	var sphere = new Physijs.SphereMesh(geom, Physijs.createMaterial(material, friction, restitution));
 	sphere.material.map.repeat.set(2, 2);
-	sphere.position.set(Math.random() * terrainWidth - terrainWidth / 2, 500 + Math.random() * 5, Math.random() * terrainHeight - terrainHeight / 2);
+	sphere.position.set((Math.random() * terrainWidth / 2) - terrainWidth / 4, 500 + Math.random() * 5, (Math.random() * terrainHeight / 2) - (terrainHeight) / 4);
 	sphere.rotation.z = Math.PI * Math.random() * 2;
 	sphere.rotation.x = Math.PI * Math.random() * 0.5;
 	sphere.rotation.y = Math.PI * Math.random();
 	scene.add(sphere);
     }
+    render();
 }
 
 function addLights() {
-    scene.add(new THREE.AmbientLight(0xaaaaaa));
+    scene.add(new THREE.AmbientLight(0xbbbbbb));
         
     /*var spotLight = new THREE.SpotLight(0xffffff);
-    spotLight.position.set(0, 300, 10);
+    spotLight.position.set(-500, 500, -200);
     spotLight.castShadow = true;
     spotLight.intensity = 0.5;
     scene.add(spotLight);*/
 
     var spotLightFlare = new THREE.SpotLight(0xffffff);
-    spotLightFlare.position.set(120, 610, 3000);
+    spotLightFlare.position.set(120, 610, -3000);
     spotLightFlare.castShadow = false;
-    spotLightFlare.intensity = 1;
+    spotLightFlare.intensity = 0.5;
     scene.add(spotLightFlare);
 
     var textureFlare0 = THREE.ImageUtils.loadTexture("/images/lensflare/lensflare0.png");
@@ -317,6 +318,9 @@ function addLights() {
     lensFlare.position.copy(spotLightFlare.position);
     scene.add(lensFlare);
 }
+
+var pivotPoint = new THREE.Object3D();
+scene.add(pivotPoint);
 
 function showLandmarks() {
 
@@ -350,23 +354,101 @@ function showLandmarks() {
 	outsideVista.material.shininess = 10;
 	base.material.shininess = 1;
 	//loadedMesh.rotation.x = Math.PI / 2;
-	loadedMesh.scale.set(10, 10, 10);
+	//loadedMesh.scale.set(0.1, 0.1, 0.1);
+	//loadedMesh.scale.set(10, 10, 10);
 	//loadedMesh.position.set(0, 0, 0);
 	coord = projection([23.743183, 61.504961]);// Näsinneula 61.504961, 23.743183
 	console.log(coord);
 	coord = translate(coord);
 	console.log(coord);
 	loadedMesh.position.set(coord[0], 0, coord[1]);
-	scene.add(loadedMesh);
+	landmarks.push(loadedMesh);
+	pivotPoint.add(loadedMesh);
+	//scene.add(loadedMesh);
     });
 
     loader.load("/3d/torni.obj", "/3d/torni.mtl", function(loadedMesh) {
         console.log(loadedMesh);
 	
 	//loadedMesh.rotation.x = Math.PI / 2;
-	loadedMesh.scale.set(10, 10, 10);
-	loadedMesh.position.set(0, 0, 0);
-	scene.add(loadedMesh);
+	//loadedMesh.scale.set(0.1, 0.1, 0.1);
+	//coord = translate(projection([23.7755, 61.496944]));
+	//loadedMesh.position.set(coord[0], 0, coord[1]);
+	//landmarks.push(loadedMesh);
+	//pivotPoint.add(loadedMesh);
+	//scene.add(loadedMesh);
+
+	//var wholeObject = new THREE.Object3D();
+	var firstPart = new Physijs.ConvexMesh(loadedMesh.children[0].children[0].geometry, Physijs.createMaterial(loadedMesh.children[0].children[0].material, 0.5, 0.5));
+
+	for (var i = 1; i < loadedMesh.children[0].children.length; i++) {
+	    var part = new Physijs.ConvexMesh(loadedMesh.children[0].children[i].geometry, Physijs.createMaterial(loadedMesh.children[0].children[i].material, 0.5, 0.5));
+	    //wholeObject.add(part);
+	    firstPart.add(part);
+	}
+	coord = translate(projection([23.7755, 61.496944]));
+        firstPart.position.set(coord[0], 0, coord[1]);
+	//pivotPoint.add(wholeObject);
+	//gameBoard.add(firstPart);
+	scene.add(gameBoard);
+
+	addBalls();
+    });
+
+    loader.load("/3d/tampella.obj", "/3d/tampella.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+	coord = translate(projection([23.763898, 61.506058]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/klingendahl.obj", "/3d/klingendahl.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.752299, 61.491798]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/trikoo.obj", "/3d/trikoo.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.725623, 61.492271]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/frenckell.obj", "/3d/frenckell.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.762522, 61.499385]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/haulitorni.obj", "/3d/haulitorni.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.711377, 61.505239]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/tako.obj", "/3d/tako.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.763343, 61.496558]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
+    });
+
+    loader.load("/3d/attila.obj", "/3d/attila.mtl", function(loadedMesh) {
+        console.log(loadedMesh);
+        coord = translate(projection([23.778825, 61.498599]));
+        loadedMesh.position.set(coord[0], 0, coord[1]);
+        landmarks.push(loadedMesh);
+        pivotPoint.add(loadedMesh);
     });
 }
 
@@ -620,16 +702,60 @@ function render() {
 
     controls.update();
     requestAnimationFrame(render);
+    
+    pivotPoint.rotation.x = gameBoard.rotation.x;
+    pivotPoint.rotation.z = gameBoard.rotation.z;
+    //console.log(landmarks.length);
+    //for (var i = 0; i < landmarks.length; i++) {
+	//console.log(landmarks[i]);
+	//landmarks[i].rotation.x = gameBoard.rotation.x;
+	//landmarks[i].rotation.z = gameBoard.rotation.z;
+	//landmarks[i].rotation.y = Math.PI * -0.5;
+	//landmarks[i].__dirtyRotation = true;
+    //}
+    renderer.autoClear = false;
+    renderer.clear();
+    renderer.render(backgroundScene , backgroundCamera );
     renderer.render(scene, camera);
-    /*gameBoard.rotation.x += 0.002 * direction;
-    gameBoard.rotation.z += 0.002 * direction;
-    if (gameBoard.rotation.x < -0.4) direction = 1;
-    if (gameBoard.rotation.x > 0.4) direction = -1;
-    gameBoard.__dirtyRotation = true;*/
+    if (rotateX != 0) {
+	gameBoard.rotation.x += 0.001 * rotateX;
+	gameBoard.__dirtyRotation = true;
+    }
+    if (rotateZ != 0) {
+	gameBoard.rotation.z += 0.001 * rotateZ;
+	gameBoard.__dirtyRotation = true;
+    }	
+    //if (gameBoard.rotation.x < -0.4) direction = 1;
+    //if (gameBoard.rotation.x > 0.4) direction = -1;
+    //gameBoard.__dirtyRotation = true;
     scene.simulate();
 }
 
-render();
+var rotateX = 0;
+var rotateZ = 0;
+
+$(window).keydown(function (e) {
+    //console.log(e);
+    switch (e.which) {
+    case 37:
+	rotateZ += 1;
+	//gameBoard.rotation.z += 0.01;
+	break;
+    case 38:
+	rotateX -= 1;
+	//gameBoard.rotation.x += 0.01;
+	break;
+    case 39:
+	rotateZ -= 1;
+        //gameBoard.rotation.z -= 0.01;
+        break;
+    case 40:
+	rotateX += 1;
+        //gameBoard.rotation.x -= 0.01;
+        break;
+    }
+    //gameBoard.__dirtyRotation = true;
+});
 
 
 function translate(point) {
@@ -651,9 +777,9 @@ function initStats() {
 }
 
 $( window ).resize(function() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = $('#webgl').innerWidth() / $('#webgl').innerHeight();
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize($('#webgl').innerWidth(), $('#webgl').innerHeight());
 });
 
 //var projector = new THREE.Projector();
@@ -683,3 +809,20 @@ function onClick(event) {
 
 $( window ).click(onClick);
 
+function setupBackground() {
+    var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg' );
+    var backgroundMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2, 0),
+        new THREE.MeshBasicMaterial({
+            map: texture
+        }));
+
+    backgroundMesh.material.depthTest = false;
+    backgroundMesh.material.depthWrite = false;
+
+    // Create your background scene
+    backgroundScene = new THREE.Scene();
+    backgroundCamera = new THREE.Camera();
+    backgroundScene.add(backgroundCamera);
+    backgroundScene.add(backgroundMesh);
+}

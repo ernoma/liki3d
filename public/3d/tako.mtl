@@ -1,0 +1,21 @@
+# Blender MTL File: 'tako.blend'
+# Material Count: 2
+
+newmtl Brick
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.205263 0.205263 0.205263
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd textures/brick-wall.jpg
+
+newmtl Steel
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.438543 0.438543 0.438543
+Ks 0.978947 0.978947 0.978947
+Ni 1.000000
+d 1.000000
+illum 2

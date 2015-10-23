@@ -42,3 +42,5 @@ node_modules
 public/fonts
 bin
 \#*\#
+public/vendor/threejs/physijs/bower.json
+public/vendor/threejs/physijs/examples/

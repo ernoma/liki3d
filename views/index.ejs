@@ -4,20 +4,23 @@
 <body>
   <% include navbar %>
   
-  <!--<div class="container">-->
-  <div id="Stats-output"></div>
-  <div id="webgl">
-      
-  </div>
+  <!--<div id="main_area">-->
+    <!--<div class="container">-->
+    <div id="Stats-output"></div>
+    <div id="webgl"></div>
   
-  <div id="loading">
-    <div id="spinner"></div>
-    <div id="loading_text"></div>
-  </div>
+    <div id="loading">
+      <div id="spinner"></div>
+      <div id="loading_text"></div>
+    </div>
 
-  <% include footer %>
+  <!--</div>-->
+
   <!--</div>-->
   <!-- /container -->
+
+  <% include footer %>
+
   <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
   <script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
@@ -45,7 +48,7 @@
   <!--<script type="text/javascript" src="/fonts/Symbola_regular.typeface.js"></script>-->
   <script type="text/javascript">
     $(document).ready(function() {
-    $('#home').addClass("active");
+    $('#play').addClass("active");
     });
   </script>
   <!--<script type="text/javascript" src="/js/api_keys.js"></script>-->
