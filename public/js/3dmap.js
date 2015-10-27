@@ -316,7 +316,7 @@ function showLandmarks() {
 		 console.log(coord);
 		 coord = translate(coord);
 		 console.log(coord);
-		 loadedMesh.position.set(coord[0], 0, coord[1]);
+		 loadedMesh.position.set(coord[0], 1, coord[1]);
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
 		 //scene.add(loadedMesh);
@@ -437,7 +437,7 @@ function showTampereOpenData() {
                     //console.log(coord);                                                                                                  
                     coord = translate(coord);
                     //console.log(coord);                                                                                                  
-                    mesh.position.set(coord[0], 0.5, coord[1]);
+                    mesh.position.set(coord[0], 1.5, coord[1]);
                     tampereObjects.push(mesh);
                     pivotPoint.add(mesh);
                 }
