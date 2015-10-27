@@ -1,0 +1,21 @@
+# Blender MTL File: 'finnlayson.blend'
+# Material Count: 2
+
+newmtl Brick
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.173684 0.173684 0.173684
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd textures/brick-wall.jpg
+
+newmtl CopperGreen
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.026099 0.075701 0.014654
+Ks 0.142105 0.142105 0.142105
+Ni 1.000000
+d 1.000000
+illum 2
