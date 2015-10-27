@@ -355,6 +355,8 @@ function showExternalData() {
 
     showTampereOpenData();
 
+    showOSMData();
+
     var loader = new THREE.STLLoader();
 
     loader.load("/3d/clef.stl", function (geometry) {
@@ -384,20 +386,126 @@ function showExternalData() {
 
 }
 
+function showOSMData() {
+    
+    var loader = new THREE.OBJMTLLoader();
+    loader.load("/3d/icons/icon_pharmacy.obj", "/3d/icons/icon_pharmacy.mtl", function(loadedMesh) {
+	$.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpharmacy%5D%3B%0Aout%3B", function(data) {
+	    //console.log("osm:", data);
+	    for (var i = 0; i < data.elements.length; i++) {
+		var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+		tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+	    }
+	});
+    });
+
+    loader.load("/3d/icons/icon_bank.obj", "/3d/icons/icon_bank.mtl", function(loadedMesh) {
+        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dbank%5D%3B%0Aout%3B", function(data) {
+            //console.log("osm:", data);
+            for (var i = 0; i < data.elements.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+                tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+            }
+        });
+    });
+
+    loader.load("/3d/icons/icon_cafe.obj", "/3d/icons/icon_cafe.mtl", function(loadedMesh) {
+        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dcafe%5D%3B%0Aout%3B", function(data) {
+            //console.log("osm:", data);
+            for (var i = 0; i < data.elements.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+                tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+            }
+        });
+    });
+
+    loader.load("/3d/icons/icon_shop.obj", "/3d/icons/icon_shop.mtl", function(loadedMesh) {
+        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bshop%3Dsupermarket%5D%3B%0Aout%3B", function(data) {
+            //console.log("osm:", data);
+            for (var i = 0; i < data.elements.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+                tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+            }
+        });
+    });
+
+    loader.load("/3d/icons/icon_letter.obj", "/3d/icons/icon_letter.mtl", function(loadedMesh) {
+        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpost_box%5D%3B%0Aout%3B", function(data) {
+            //console.log("osm:", data);
+            for (var i = 0; i < data.elements.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+                tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+            }
+        });
+    });
+
+    loader.load("/3d/icons/icon_post_office.obj", "/3d/icons/icon_post_office.mtl", function(loadedMesh) {
+        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpost_office%5D%3B%0Aout%3B", function(data) {
+            //console.log("osm:", data);
+            for (var i = 0; i < data.elements.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.elements[i].lon, data.elements[i].lat]);
+                //console.log(coord);
+                coord = translate(coord);
+                //console.log(coord);
+                mesh.position.set(coord[0], 1, coord[1]);
+                tampereObjects.push(mesh);
+                pivotPoint.add(mesh);
+            }
+        });
+    });
+}
+
 function showTampereOpenData() {
    
     var loader = new THREE.OBJMTLLoader();
     loader.load("/3d/icons/icon_swimming.obj", "/3d/icons/icon_swimming.mtl", function(loadedMesh) {
 	$.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:UIMAHALLIT&outputFormat=json&srsName=EPSG:4326", function(data) {
-	    console.log(data);
-	    console.log(loadedMesh);
+	    //console.log(data);
+	    //console.log(loadedMesh);
 	    for (var i = 0; i < data.features.length; i++) {
 		var mesh = loadedMesh.clone();
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-                console.log(coord);
+                //console.log(coord);
                 coord = translate(coord);
-                console.log(coord);
+                //console.log(coord);
                 mesh.position.set(coord[0], 0.5, coord[1]);
                 tampereObjects.push(mesh);
                 pivotPoint.add(mesh);
@@ -427,8 +535,8 @@ function showTampereOpenData() {
 
     loader.load("/3d/icons/icon_library.obj", "/3d/icons/icon_library.mtl", function(loadedMesh) {
         $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:KIRJASTOT&outputFormat=json&srsName=EPSG:4326", function(data) {
-            console.log(data);
-            console.log(loadedMesh);
+            //console.log(data);
+            //console.log(loadedMesh);
             for (var i = 0; i < data.features.length; i++) {
                 var mesh = loadedMesh.clone();
                 mesh.scale.set(2, 2, 2);
