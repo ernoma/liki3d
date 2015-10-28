@@ -1,54 +1,13 @@
 
-var opts = {
-  lines: 13, // The number of lines to draw
-  length: 10, // The length of each line
-  width: 5, // The line thickness
-  radius: 15, // The radius of the inner circle
-  corners: 1, // Corner roundness (0..1)
-  rotate: 0, // The rotation offset
-  direction: 1, // 1: clockwise, -1: counterclockwise
-  color: '#000', // #rgb or #rrggbb or array of colors
-  speed: 1, // Rounds per second
-  trail: 60, // Afterglow percentage
-  shadow: false, // Whether to render a shadow
-  hwaccel: false, // Whether to use hardware acceleration
-  className: 'spinner', // The CSS class to assign to the spinner
-  zIndex: 2e9, // The z-index (defaults to 2000000000)
-  top: '0%', // Top position relative to parent
-  left: '50%' // Left position relative to parent
-};
-var target = document.getElementById('spinner');
-var spinner = new Spinner(opts).spin(target);
-
-Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
-Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
-
-var stats = initStats();
-
-//console.log(places);
-
-var scene = new Physijs.Scene;
-scene.setGravity(new THREE.Vector3(0, -1000, 0));
-
-var camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
-camera.position.set(0, 1000, 3000);
-//camera.position.set(0, 0, 80);
-camera.lookAt(scene.position);
-//camera.position.z = 5;
-
-var renderer = new THREE.WebGLRenderer({ alpha: true });
-//console.log($('#webgl').innerWidth());
-//console.log($('#webgl').innerHeight());
-renderer.setSize( $('#webgl').innerWidth(), $('#webgl').innerHeight());
-//renderer.setSize( window.innerWidth, window.innerHeight );
-//renderer.setClearColorHex( 0xffffff, 1 )
-renderer.setClearColor(new THREE.Color(0xaaaaff, 1.0));
-document.getElementById('webgl').appendChild( renderer.domElement );
-
+var scene = undefined;
+var camera = undefined;
+var renderer = undefined;
 var backgroundScene = undefined;
 var backgroundCamera = undefined;
 
-var controls = new THREE.TrackballControls(camera, renderer.domElement);
+var stats = undefined;
+
+var controls = undefined;
 
 //var terrainWidth = 120;
 //var terrainHeight = 80;
@@ -61,24 +20,11 @@ var terrainHeight = 2048;
 var origTerrainWidth = 2048;
 var origTerrainHeight = 2048;
 
-var projection = d3.geo.mercator()
-    .translate([(terrainWidth + 5) / 2, (terrainHeight + 272) / 2])
-    .scale(121500)
-    .rotate([-27, 0, 0])
-    .center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
-
-
-var heightMap = new Array(origTerrainHeight);
-for (var i = 0; i < origTerrainHeight; i++) {
-    heightMap[i] = new Array(origTerrainWidth);
-}
-
-//createChart();
+var projection = undefined;
+var heightMap = undefined;
 
 var gameBoard = undefined;
-
-var pivotPoint = new THREE.Object3D();
-scene.add(pivotPoint);
+var pivotPoint = undefined;
 
 var allObjects = [];
 var clefs = [];
@@ -91,20 +37,94 @@ var busMesh = undefined;
 
 var busUpdateIntervalID = undefined;
 
-var axes = new THREE.AxisHelper(200);
-scene.add(axes);
+var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
 
-addLights();
+var rotateX = 0;
+var rotateZ = 0;
 
-setupBackground();
-showTerrain();
-//setupTerrainHeight();
-showLandmarks();
-showExternalData();
-//showRoads();
-addBalls();
-//console.log("done loading stuff");
-var $loading = $('#loading').hide();
+$(document).ready( function() {
+
+    createLegend();
+
+    var opts = {
+	lines: 13, // The number of lines to draw
+	length: 10, // The length of each line
+	width: 5, // The line thickness
+	radius: 15, // The radius of the inner circle
+	corners: 1, // Corner roundness (0..1)
+	rotate: 0, // The rotation offset
+	direction: 1, // 1: clockwise, -1: counterclockwise
+	color: '#000', // #rgb or #rrggbb or array of colors
+	speed: 1, // Rounds per second
+	trail: 60, // Afterglow percentage
+	shadow: false, // Whether to render a shadow
+	hwaccel: false, // Whether to use hardware acceleration
+	className: 'spinner', // The CSS class to assign to the spinner
+	zIndex: 2e9, // The z-index (defaults to 2000000000)
+	top: '0%', // Top position relative to parent
+	left: '50%' // Left position relative to parent
+    };
+    var target = document.getElementById('spinner');
+    var spinner = new Spinner(opts).spin(target);
+
+    Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
+    Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
+
+    stats = initStats();
+
+    //console.log(places);
+
+    scene = new Physijs.Scene;
+    scene.setGravity(new THREE.Vector3(0, -1000, 0));
+
+    camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
+    camera.position.set(0, 1000, 3000);
+    //camera.position.set(0, 0, 80);
+    camera.lookAt(scene.position);
+    //camera.position.z = 5;
+
+    renderer = new THREE.WebGLRenderer({ alpha: true });
+    //console.log($('#webgl').innerWidth());
+    //console.log($('#webgl').innerHeight());
+    renderer.setSize( $('#webgl').innerWidth(), $('#webgl').innerHeight());
+    //renderer.setSize( window.innerWidth, window.innerHeight );
+    //renderer.setClearColorHex( 0xffffff, 1 )
+    renderer.setClearColor(new THREE.Color(0xaaaaff, 1.0));
+    document.getElementById('webgl').appendChild( renderer.domElement );
+
+    controls = new THREE.TrackballControls(camera, renderer.domElement);
+
+    projection = d3.geo.mercator()
+	.translate([(terrainWidth + 5) / 2, (terrainHeight + 272) / 2])
+	.scale(121500)
+	.rotate([-27, 0, 0])
+	.center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
+
+    heightMap = new Array(origTerrainHeight);
+    for (var i = 0; i < origTerrainHeight; i++) {
+	heightMap[i] = new Array(origTerrainWidth);
+    }
+
+    //createChart();
+
+    pivotPoint = new THREE.Object3D();
+    scene.add(pivotPoint);
+
+    var axes = new THREE.AxisHelper(200);
+    scene.add(axes);
+
+    addLights();
+
+    setupBackground();
+    showTerrain();
+    //setupTerrainHeight();
+    showLandmarks();
+    showExternalData();
+    //showRoads();
+    addBalls();
+    //console.log("done loading stuff");
+    var $loading = $('#loading').hide();
+});
 
 function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg');
@@ -732,8 +752,6 @@ function showBusses() {
     //clearInterval(busUpdateIntervalID);
 }
 
-var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
-
 function showTeostoVenues(URL) {
     
     $.getJSON(URL, function (data) {
@@ -825,8 +843,6 @@ function createMesh(geom, imageFileName) {
     return mesh;
 }
 
-var direction = 1;
-
 function render() {
     stats.update();
 
@@ -868,9 +884,6 @@ function render() {
     //gameBoard.__dirtyRotation = true;
     scene.simulate();
 }
-
-var rotateX = 0;
-var rotateZ = 0;
 
 $(window).keydown(function (e) {
     //console.log(e);
@@ -988,4 +1001,8 @@ function loadOBJMTLModel(objPath, mtlPath) {
     });
 
     return deferred.promise;
+}
+
+function createLegend() {
+    $("[name='legend_checkbox']").bootstrapSwitch({size: 'mini'});
 }

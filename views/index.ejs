@@ -7,8 +7,66 @@
   <!--<div id="main_area">-->
     <!--<div class="container">-->
     <div id="Stats-output"></div>
-    <div id="webgl"></div>
-  
+    <div id="webgl">
+      <div id="legend">
+	<div class="legend_list_item">
+	  <div class="legend_item_column">Apteekit</div>
+	  <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/pharmacy.png" alt="apteekki"></div>
+	  <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+	</div>
+	<div class="legend_list_item">
+	  <div class="legend_item_column">Bussit</div>
+	  <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/bussi.png" alt="bussi"></div>
+	  <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+	</div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Kahvilat</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/cafe.png" alt="kahvila"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Kaupat</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/shop.png" alt="kauppa"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Kirjastot</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/library.png" alt="kirjasto"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Maamerkit</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/landmark.png" alt="maamerkki"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Pankit</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/bank.png" alt="pankki"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Postilaatikot</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/letter.png" alt="postilaatikko"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Postit</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/post_office.png" alt="posti"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Tapahtumapaikat</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/clef.png" alt="tapahtumapaikka"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+	<div class="legend_list_item">
+          <div class="legend_item_column">Uimahallit</div>
+          <div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/swimming.png" alt="uimahalli"></div>
+          <div class="legend_item_column"><input type="checkbox" name="legend_checkbox" checked data-on-text="Näytä" data-off-text="Piilota"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="loading">
       <div id="spinner"></div>
       <div id="loading_text"></div>
@@ -23,6 +81,7 @@
 
   <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="/vendor/bootstrap-switch/bootstrap-switch.min.js"></script>
   <script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>
   <!--<script type="text/javascript" src="/vendor/Leaflet.awesome-markers/leaflet.awesome-markers.min.js"></script>-->
   <script type="text/javascript" src="/vendor/spin.min.js"></script>
