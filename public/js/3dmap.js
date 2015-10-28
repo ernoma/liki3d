@@ -27,10 +27,19 @@ var gameBoard = undefined;
 var pivotPoint = undefined;
 
 var allObjects = [];
-var clefs = [];
-var vehicles = [];
-var landmarks = [];
 var tampereObjects = [];
+
+var pharmacies = [];
+var cafees = [];
+var shops = [];
+var libraries = [];
+var banks = [];
+var mail_boxes = [];
+var post_offices = [];
+var swimming_halls = [];
+var clefs = [];
+var busses = [];
+var landmarks = [];
 
 var clefGeometry = undefined;
 var busMesh = undefined;
@@ -421,6 +430,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
 		tampereObjects.push(mesh);
+		pharmacies.push(mesh);
                 pivotPoint.add(mesh);
 	    }
 	});
@@ -438,6 +448,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
                 tampereObjects.push(mesh);
+		banks.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
@@ -455,6 +466,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
                 tampereObjects.push(mesh);
+		cafees.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
@@ -472,6 +484,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
                 tampereObjects.push(mesh);
+		shops.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
@@ -489,6 +502,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
                 tampereObjects.push(mesh);
+		mail_boxes.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
@@ -506,6 +520,7 @@ function showOSMData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 1, coord[1]);
                 tampereObjects.push(mesh);
+		post_offices.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
@@ -528,6 +543,7 @@ function showTampereOpenData() {
                 //console.log(coord);
                 mesh.position.set(coord[0], 0.5, coord[1]);
                 tampereObjects.push(mesh);
+		swimming_halls.push(mesh);
                 pivotPoint.add(mesh);
 	    }
 	});
@@ -567,6 +583,7 @@ function showTampereOpenData() {
                     //console.log(coord);                                                                                                  
                     mesh.position.set(coord[0], 1.5, coord[1]);
                     tampereObjects.push(mesh);
+		    libraries.push(mesh);
                     pivotPoint.add(mesh);
                 }
             }
@@ -705,8 +722,8 @@ function showBusses() {
 
 	for (var i = 0; i < journeys.length; i++) {
 	    var found = false;
-	    for (var j = 0; j < vehicles.length; j++) {
-		if (journeys[i].MonitoredVehicleJourney.VehicleRef.value == vehicles[j].journey.MonitoredVehicleJourney.VehicleRef.value) {
+	    for (var j = 0; j < busses.length; j++) {
+		if (journeys[i].MonitoredVehicleJourney.VehicleRef.value == busses[j].journey.MonitoredVehicleJourney.VehicleRef.value) {
 		    found = true;
 		    // update mesh position
 		    coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
@@ -714,8 +731,8 @@ function showBusses() {
                     var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 			var tcoord = translate(coord);
-			vehicles[j].position.set(tcoord[0], 0.8, tcoord[1]);
-			vehicles[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
+			busses[j].position.set(tcoord[0], 0.8, tcoord[1]);
+			busses[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    }
 		    break;
 		}
@@ -741,7 +758,7 @@ function showBusses() {
 		    mesh.position.set(tcoord[0], 0.8, tcoord[1]);
 		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
-		    vehicles.push(mesh);
+		    busses.push(mesh);
 		    pivotPoint.add(mesh);
 		    allObjects.push(mesh);
 		//}
@@ -1004,5 +1021,42 @@ function loadOBJMTLModel(objPath, mtlPath) {
 }
 
 function createLegend() {
-    $("[name='legend_checkbox']").bootstrapSwitch({size: 'mini'});
+    
+    d3.csv("data/legend.csv", function(data) {
+        console.log(data);
+
+	for (var i = 0; i < data.length; i++) {
+
+	    item = '<div class="legend_list_item">';
+	    item += '<div class="legend_name_column">' + data[i].legend + '</div>';
+	    //item += '<div class="legend_item_column"><img width="64" height="64" src="/images/legend_icons/' + data[i].icon_name + '.png" alt="' + data[i].legend + '"></div>';
+	    item += '<div class="legend_item_column"><input type="checkbox" name="' +  data[i].plural_name + '" checked data-on-text="Näytä" data-off-text="Piilota" id="cb_legend_' + data[i].icon_name + '"></div>';
+	    item += '</div>';
+
+	    $("#legend").append(item);
+
+	    $('input[name="' + data[i].plural_name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
+		//console.log(this); // DOM element
+		//console.log(event); // jQuery event
+		console.log(state); // true | false
+
+		if (state == true) {
+		    console.log("showing: " + this.name);
+		    var objects = window[this.name];
+		    for (var j = 0; j < objects.length; j++) {
+			objects[j].traverse(function(child){child.visible = true;});
+		    }
+		}
+		else {
+		    console.log("hiding: " + this.name);
+		    var objects = window[this.name];
+                    for (var j = 0; j < objects.length; j++) {
+			objects[j].traverse(function(child){child.visible = false;});
+		    }
+		}
+	    });
+	    
+	    $('[name="' +  data[i].plural_name + '"]').bootstrapSwitch({size: 'mini'});
+	}
+    });
 }
