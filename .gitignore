@@ -45,3 +45,5 @@ bin
 public/vendor/threejs/physijs/bower.json
 public/vendor/threejs/physijs/examples/
 public/vendor/q-1.4.1/
+scripts/heightmap/temp/*
+todo.txt

@@ -17,8 +17,8 @@ var terrainHeight = 2048;
 //var origTerrainWidth = 400;
 //var origTerrainHeight = 268;
 
-var origTerrainWidth = 2048;
-var origTerrainHeight = 2048;
+var origTerrainWidth = 700;
+var origTerrainHeight = 700;
 
 var projection = undefined;
 var heightMap = undefined;
@@ -126,13 +126,12 @@ $(document).ready( function() {
 
     setupBackground();
     showTerrain();
-    //setupTerrainHeight();
-    showLandmarks();
+    /*showLandmarks();
     showExternalData();
-    //showRoads();
+    //showRoads();                                                                                               
     addBalls();
-    //console.log("done loading stuff");
-    var $loading = $('#loading').hide();
+    //console.log("done loading stuff");                                                                         
+    var $loading = $('#loading').hide();*/
 });
 
 function setupBackground() {
@@ -153,18 +152,21 @@ function setupBackground() {
 }
 
 function showTerrain() {
-
-    var URL = '/images/osm_tampere_large.png';
+    
+    setupTerrainHeight();
+    
+    /*var URL = '/images/osm_tampere_large.png';
 
     var texture = THREE.ImageUtils.loadTexture(URL);
     console.log(texture);
     //var geometry = new THREE.PlaneGeometry(2048, 2048, 120, 120);
-    var geometry = new THREE.BoxGeometry(2048, 2, 2048);
+    var geometry = new THREE.BoxGeometry(2048, 2, 2048);                                                           
     var material = Physijs.createMaterial(new THREE.MeshPhongMaterial({
         map: texture
     }), 0.9, 0.3);
+
     var ground = new Physijs.BoxMesh(geometry, material, 0);
-    
+
     ground_material = Physijs.createMaterial(
         new THREE.MeshLambertMaterial({ color: 0x00aaaa }),
             .9, // high friction
@@ -215,12 +217,12 @@ function showTerrain() {
     //plane.position.set(0, 0, 0);
     //scene.add(ground);
     gameBoard = ground;
-    scene.add(gameBoard);
+    scene.add(gameBoard);*/
 
     /*var oWidth = origTerrainWidth - 1;
-    var oHeight = origTerrainHeight - 1;
+    var oHeight = origTerrainHeight - 1;*/
 
-    var zoom = 12;
+    /*var zoom = 12;
     var minLat = 61.2740;
     var minLng = 23.3317;
     var maxLat = 61.701;
@@ -229,7 +231,10 @@ function showTerrain() {
     var tileNumbers = calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng);
     console.log(tileNumbers);
 
-    THREE.ImageUtils.crossOrigin = '';
+    var tilesBounds = calculateTilesBounds(tileNumbers, zoom);
+    console.log(tilesBounds);*/
+
+    /*THREE.ImageUtils.crossOrigin = '';
 
     var xCount = tileNumbers.maxXY.x - tileNumbers.minXY.x + 1;
     var yCount = tileNumbers.minXY.y - tileNumbers.maxXY.y + 1;
@@ -237,7 +242,7 @@ function showTerrain() {
     for (var x = tileNumbers.minXY.x; x <= tileNumbers.maxXY.x; x++) {
 	for (var y = tileNumbers.maxXY.y; y <= tileNumbers.minXY.y; y++) {
 	    var geometry = new THREE.PlaneGeometry(terrainWidth, Math.floor(terrainWidth * (oHeight / oWidth)), oWidth, oHeight); // Makes 120x80 size plane geometry with the amount of vertices that matches orig terrain width-1 and height-1
-	    
+
 	    var URL = 'http://a.tiles.mapbox.com/v3/ernoma.i04d787e/' + zoom + '/' + x + '/' + y + '.png';
 	    //var URL = 'http://tiles.kartat.kapsi.fi/ortokuva/' + zoom + '/' + x + '/' + y + '.jpg';
 	    console.log(URL);
@@ -286,17 +291,24 @@ function showTerrain() {
 }
 
 function setupTerrainHeight() {
-    /*var terrainLoader = new THREE.TerrainLoader();
-      terrainLoader.load('/data/tampere.bin', function(data) {
-      //console.log(data);
+    var terrainLoader = new THREE.TerrainLoader();
+    terrainLoader.load('/data/tampere_height.bin', function(data) {
+	console.log(data);
 
-      modifyPlaneGeometryHeight(gameBoard, data);
+	modifyPlaneGeometryHeight(data);
         
-      }, function(event) {
-      //console.log(event);
-      }, function (event) {
-      console.log(event);
-      });*/
+	showLandmarks();
+	showExternalData();
+	//showRoads();
+	//addBalls();
+	//console.log("done loading stuff");
+	var $loading = $('#loading').hide();
+
+    }, function(event) {
+	//console.log(event);
+    }, function (event) {
+	console.log(event);
+    });
 }
 
 function addLights() {
@@ -331,7 +343,7 @@ function addLights() {
 
 function showLandmarks() {
     d3.csv("data/landmarks.csv", function(data) {
-        console.log(data);
+        //console.log(data);
 
 	var loader = new THREE.OBJMTLLoader();
 
@@ -339,13 +351,11 @@ function showLandmarks() {
         
 	    (function(data, i)
 	     { loader.load("/3d/" + data[i].object_name + ".obj", "/3d/" + data[i].object_name + ".mtl", function(loadedMesh) {
-		 console.log(loadedMesh);
-		 loadedMesh.scale.set(0.4, 0.4, 0.4);
+		 //console.log(loadedMesh);
+		 loadedMesh.scale.set(0.12, 0.12, 0.12);
 		 coord = projection([data[i].lng, data[i].lat]);
-		 console.log(coord);
-		 coord = translate(coord);
-		 console.log(coord);
-		 loadedMesh.position.set(coord[0], 1, coord[1]);
+		 //console.log(coord);
+		 makeInitialTransformations(loadedMesh, coord);
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
 		 //scene.add(loadedMesh);
@@ -393,7 +403,7 @@ function showExternalData() {
 	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	clefGeometry = geometry;
 
-	showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
     });
 
     /*loader.load("/3d/bus.stl", function (geometry) {
@@ -402,6 +412,8 @@ function showExternalData() {
 
 	//setInterval(showBusses, 1000);
     });*/
+
+    showVisitTampereLocations('http://visittampere.fi/api/search', 0);
 
     var loader = new THREE.OBJMTLLoader();
 
@@ -415,9 +427,22 @@ function showExternalData() {
 
 }
 
+function makeInitialTransformations(mesh, coord) {
+
+    var x = coord[0];
+    x = Math.round(x / terrainWidth * origTerrainWidth);
+    var y = coord[1];
+    y = Math.round(y / terrainHeight * origTerrainHeight);
+    coord = translate(coord);
+
+    //console.log(coord);
+    mesh.position.set(coord[0], -coord[1], heightMap[y][x]);
+    mesh.rotation.x = Math.PI / 2;
+}
+
 function showOSMData() {
     
-    var loader = new THREE.OBJMTLLoader();
+    /*var loader = new THREE.OBJMTLLoader();
     loader.load("/3d/icons/icon_pharmacy.obj", "/3d/icons/icon_pharmacy.mtl", function(loadedMesh) {
 	$.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpharmacy%5D%3B%0Aout%3B", function(data) {
 	    //console.log("osm:", data);
@@ -426,9 +451,7 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
 		tampereObjects.push(mesh);
 		pharmacies.push(mesh);
                 pivotPoint.add(mesh);
@@ -444,9 +467,7 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		banks.push(mesh);
                 pivotPoint.add(mesh);
@@ -462,9 +483,7 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		cafees.push(mesh);
                 pivotPoint.add(mesh);
@@ -480,9 +499,7 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		shops.push(mesh);
                 pivotPoint.add(mesh);
@@ -498,9 +515,7 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		mail_boxes.push(mesh);
                 pivotPoint.add(mesh);
@@ -516,15 +531,13 @@ function showOSMData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.elements[i].lon, data.elements[i].lat]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 1, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		post_offices.push(mesh);
                 pivotPoint.add(mesh);
             }
         });
-    });
+    });*/
 }
 
 function showTampereOpenData() {
@@ -539,9 +552,7 @@ function showTampereOpenData() {
                 mesh.scale.set(2, 2, 2);
                 coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
                 //console.log(coord);
-                coord = translate(coord);
-                //console.log(coord);
-                mesh.position.set(coord[0], 0.5, coord[1]);
+		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		swimming_halls.push(mesh);
                 pivotPoint.add(mesh);
@@ -559,9 +570,7 @@ function showTampereOpenData() {
 		if (data.features[i].geometry != null) {
                     coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
                     //console.log(coord);
-                    coord = translate(coord);
-                    //console.log(coord);
-                    mesh.position.set(coord[0], 0.5, coord[1]);
+		    makeInitialTransformations(mesh, coord);
                     landmarks.push(mesh);
                     pivotPoint.add(mesh);
 		}
@@ -578,10 +587,7 @@ function showTampereOpenData() {
                 mesh.scale.set(2, 2, 2);
                 if (data.features[i].geometry != null) {
                     coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-                    //console.log(coord);                                                                                                  
-                    coord = translate(coord);
-                    //console.log(coord);                                                                                                  
-                    mesh.position.set(coord[0], 1.5, coord[1]);
+		    makeInitialTransformations(mesh, coord);
                     tampereObjects.push(mesh);
 		    libraries.push(mesh);
                     pivotPoint.add(mesh);
@@ -685,18 +691,117 @@ function calculateTileNumber(zoom, lat, lon) {
     return xy;
 }
 
+
+function calculateTilesBounds(tileNumbers, zoomLevel) {
+    var minX = tileNumbers.minXY.x < tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
+    var maxX = tileNumbers.minXY.x > tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
+    var minY = tileNumbers.minXY.y < tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
+    var maxY = tileNumbers.minXY.y > tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
+
+    console.log("minX, maxX, minY, maxY:", minX, maxX, minY, maxY);
+
+    var unit = 1.0 / (1 << zoomLevel);
+
+    //
+    // calculate sw
+    //
+    var sw_bounds = calculateTileBounds(minX, maxY, zoomLevel);    
+    //
+    // calculate ne
+    //
+    var ne_bounds = calculateTileBounds(maxX, minY, zoomLevel);
+
+    var bounds = {
+	sw: {
+	    lat: sw_bounds.minY,
+	    lng: sw_bounds.minX
+	},
+	ne: {
+	    lat: ne_bounds.maxY,
+	    lng: ne_bounds.maxX
+	}
+    }
+    return bounds;
+}
+
+function calculateTileBounds(tileX, tileY, zoom) {
+    /*var unit = 1.0 / (1 << zoom);
+
+    var relY1 = tileY * unit;
+    var relY2 = relY1 + unit;
+
+    var yy1 = Math.atan(sinh(Math.PI));
+
+    var limitY = Math.log(Math.tan(yy1) + 1.0 / Math.cos(yy1));
+    var rangeY = 2 * limitY;
+    relY1 = limitY - rangeY * relY1;
+    relY2 = limitY - rangeY * relY2;
+    var lat1 = 180.0 / Math.PI * Math.atan(sinh(relY1));
+    var lat2 = 180.0 / Math.PI * Math.atan(sinh(relY2));
+    unit = 360.0 / (1 << zoom);
+    var lon1 = -180 + tileX * unit;
+
+    var bounds = {
+	minY: lat1,
+	maxY: lat2,
+	minX: lon1,
+	maxX: lon1 + unit
+    }*/
+
+    var bounds = {
+        minY: tile2lat(tileY + 1, zoom),
+        maxY: tile2lat(tileY, zoom),
+        minX: tile2lon(tileX, zoom),
+        maxX: tile2lon(tileX + 1, zoom)
+    }
+
+    return bounds;
+}
+
+function tile2lon(x, zoom) {
+    return x / Math.pow(2.0, zoom) * 360.0 - 180;
+}
+ 
+function tile2lat(y, zoom) {
+    var n = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, zoom);
+    return toDeg(Math.atan(sinh(n)));
+}
+
+function toDeg(rad) {
+    return rad / (Math.PI / 180);
+}
+
 function toRad(degrees){
     return degrees * Math.PI / 180;
 }
 
-function modifyPlaneGeometryHeight(geometry, data) {    
+function sinh (arg) {
+  return (Math.exp(arg) - Math.exp(-arg)) / 2;
+}
+
+function modifyPlaneGeometryHeight(data) {
+
+    var URL = '/images/osm_tampere_large.png';
+    
+    var texture = THREE.ImageUtils.loadTexture(URL);
+    //console.log(texture);
+    var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
+    //var geometry = new THREE.BoxGeometry(2048, 2, 2048);
+    var material = new THREE.MeshPhongMaterial({
+	map: texture
+    });
+    /*var material = Physijs.createMaterial(new THREE.MeshPhongMaterial({
+        map: texture
+    }), 0.9, 0.3);*/
+    
     //console.log(geometry.vertices.length);
     
     var j = 0;
     var k = 0;
 
     for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	var height = data[i] / 65535 * 5;
+	//var height = data[i] / 65535 * 21;
+	var height = data[i] / 255 * 21;
 	geometry.vertices[i].z = height;
 	heightMap[j][k] = height;
 	k++;
@@ -705,6 +810,22 @@ function modifyPlaneGeometryHeight(geometry, data) {
 	    k = 0;
 	}
     }
+
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    //console.log(geometry);
+
+    var ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+    /*var ground = new Physijs.HeightfieldMesh(
+	geometry,
+	material,
+	0,
+	120,
+	120);*/
+
+    gameBoard = ground;
+    scene.add(gameBoard);
 
     console.log("done modifying z");
 }    
@@ -730,8 +851,7 @@ function showBusses() {
                     var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
                     var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			var tcoord = translate(coord);
-			busses[j].position.set(tcoord[0], 0.8, tcoord[1]);
+			makeInitialTransformations(busses[j], coord);
 			busses[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    }
 		    break;
@@ -754,8 +874,7 @@ function showBusses() {
 		//var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		//console.log(x, y);
 		//if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-		    var tcoord = translate(coord);
-		    mesh.position.set(tcoord[0], 0.8, tcoord[1]);
+		makeInitialTransformations(mesh, coord);
 		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
 		    busses.push(mesh);
@@ -767,6 +886,62 @@ function showBusses() {
     });
 
     //clearInterval(busUpdateIntervalID);
+}
+
+function showVisitTampereLocations(URL, offset) {
+
+    var params = {
+	type: 'location',
+	limit: 50,
+	offset: offset,
+	lang: 'fi'
+    }
+
+    /*$.getJSON(URL, params, function (data) {
+	console.log(data);
+	
+	for (var i = 0; i < data.length; i++) {
+	    var postcode = null;
+	    if (data[i].contact_info.postcode != null && $.isNumeric(data[i].contact_info.postcode)) {
+		postcode = data[i].contact_info.postcode;
+	    }
+	    var address = data[i].contact_info.address;
+	    var city = data[i].contact_info.city;
+
+	    var full_address = "";
+
+	    if (address != null) {
+		full_address += address + ", ";
+	    }
+	    if (postcode != null) {
+                full_address += postcode + ", ";
+            }
+	    if (city != null) {
+                full_address += city;
+            }
+	    
+	    if (full_address != null) {
+	
+	    // TODO
+	    //encodeURIComponent(full_address.split(' ').join('+'));
+	    
+		var addr = full_address.split(' ').join('+');
+		
+		var params = {
+                    address: addr,
+                    key: 'AIzaSyAy7EmQA9bx9TCcHaN-Llb62-pDGrePSII'
+		};
+
+		$.getJSON('https://maps.googleapis.com/maps/api/geocode/json', params, function (data) {
+		    console.log(data);
+		});
+	    }
+	}
+
+	if (data.length >= 50) {
+	    //showVisitTampereLocations(URL, offset + 50);
+	}
+    });*/
 }
 
 function showTeostoVenues(URL) {
@@ -801,15 +976,6 @@ function getVenuesData(data, i) {
 
 			var height = 3.7648086547851562 * 0.4;
 		    
-			/*var textGeomOptions = {
-			  size: 0.5,
-			  height: 0.5,
-			  font: 'symbola',
-			  curveSegments: 12,
-			  steps: 1
-			  }
-			  var mesh = new THREE.Mesh(new THREE.TextGeometry("\u1D11E", textGeomOptions), new THREE.MeshPhongMaterial());*/
-
 			//var boxGeometry = new THREE.BoxGeometry(0.5, 0.5, height);
 			//var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 3))]);
 
@@ -818,10 +984,7 @@ function getVenuesData(data, i) {
 			mesh.venue = result.venue;
 			//var box = new THREE.Box3().setFromObject( mesh );
 			//console.log( box.min, box.max, box.size() );
-			mesh.scale.set(4, 4, 4);
-			mesh.rotation.y = 0.5 * Math.PI;
-
-			//console.log(mesh);
+			mesh.scale.set(2, 2, 2);
 
 			var coord = projection([result.venue.place.geoCoordinates.longitude, result.venue.place.geoCoordinates.latitude]);
 			var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
@@ -830,8 +993,8 @@ function getVenuesData(data, i) {
 			//console.log("x: " + x + ", y: " + y);
 
 			if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			    var tcoord = translate(coord);
-			    mesh.position.set(tcoord[0], height * 6 + 0.5, tcoord[1]);
+			    makeInitialTransformations(mesh, coord);
+			    mesh.position.z += height * 3;
 			    
 			    pivotPoint.add(mesh);
 			    clefs.push(mesh);
@@ -1023,7 +1186,7 @@ function loadOBJMTLModel(objPath, mtlPath) {
 function createLegend() {
     
     d3.csv("data/legend.csv", function(data) {
-        console.log(data);
+        //console.log(data);
 
 	for (var i = 0; i < data.length; i++) {
 

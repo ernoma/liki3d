@@ -1,0 +1,5 @@
+Suuren alueen kulmaruudut ovat:
+nw: M3444G
+sw: M3343H
+ne: M4224G
+se: M4123H
