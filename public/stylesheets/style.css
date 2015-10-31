@@ -11,17 +11,21 @@ body {
 }
 
 #loading {
+    opacity: 0.9;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #222222;
     position: absolute;
-    top: 50px;
+    top: calc(10% + 50px);
     left: 0%;
     z-index: 100;
-    height: calc(100% - 50px);
-    width: 100%;
+    height: calc(50% - 50px);
+    width: 25%;
 }
 
 #loading_text {
     position: absolute;
-    top: calc(50% + 50px);
+    top: calc(30% + 50px);
     width: 100%;
     text-align: center;
 }

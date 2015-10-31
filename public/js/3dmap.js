@@ -62,7 +62,7 @@ $(document).ready( function() {
 	hwaccel: false, // Whether to use hardware acceleration
 	className: 'spinner', // The CSS class to assign to the spinner
 	zIndex: 2e9, // The z-index (defaults to 2000000000)
-	top: '50%', // Top position relative to parent
+	top: '20%', // Top position relative to parent
 	left: '50%' // Left position relative to parent
     };
     var target = document.getElementById('spinner');
@@ -115,14 +115,17 @@ $(document).ready( function() {
     
     $("#loading_text").append('<br><span id="bg_info">Ladataan taustakuvaa...</span>');
     setupBackground();
-
-    $("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
-    showTerrain();
 });
+
+/*******************************************************************************
+ * Setup functionality
+ ******************************************************************************/
 
 function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg', undefined, function() {
 	$("#bg_info").text('Ladataan taustakuva... valmista.');
+	$("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
+	showTerrain();
     });
     texture.minFilter = THREE.LinearFilter;
     var backgroundMesh = new THREE.Mesh(
@@ -141,10 +144,6 @@ function setupBackground() {
 }
 
 function showTerrain() {
-    setupTerrainHeight();
-}
-
-function setupTerrainHeight() {
     var terrainLoader = new THREE.TerrainLoader();
     $("#loading_text").append('<br><span id="height_info">Ladataan kartan korkeustietoja...</span>');
     terrainLoader.load('/data/tampere_height.bin', function(data) {
@@ -161,12 +160,7 @@ function setupTerrainHeight() {
 	$("#loading_text").append('<br><span id="landmark_info">Ladataan maamerkkejä...</span>');
 	showLandmarks();
 
-	$("#loading_text").append('<br><span id="external_data_info">Ladataan paikkoja ja busseja...</span>');
-	showExternalData();
-
 	$("#height_info").text('Ladataan kartan korkeustietoja... valmista.');
-
-	var $loading = $('#loading').hide();
 
     }, function(event) {
 	console.log(event);
@@ -228,6 +222,8 @@ function showLandmarks() {
 
 		 if (landmarks.length == data.length) {
 		     $("#landmark_info").text('Ladataan maamerkkejä... valmista.');
+		     $("#loading_text").append('<br><span id="external_data_info">Ladataan paikkoja ja busseja...</span>');
+		     showExternalData();
 		 }
 		 //scene.add(loadedMesh);
 	     });
@@ -240,7 +236,7 @@ function showExternalData() {
     var material = new THREE.MeshLambertMaterial({
         color: 0x00ffff
     });
-
+    
     showTampereOpenData();
 
     //showOSMData();
@@ -256,6 +252,7 @@ function showExternalData() {
     });
 
     //showVisitTampereLocations('http://visittampere.fi/api/search', 0);
+    //var $loading = $('#loading').hide();
 
     var loader = new THREE.OBJMTLLoader();
 
@@ -267,18 +264,47 @@ function showExternalData() {
 
 }
 
-function makeInitialTransformations(mesh, coord) {
+function showTampereOpenData() {
+   
+    var loader = new THREE.OBJMTLLoader();
+    loader.load("/3d/icons/icon_swimming.obj", "/3d/icons/icon_swimming.mtl", function(loadedMesh) {
+	$.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:UIMAHALLIT&outputFormat=json&srsName=EPSG:4326", function(data) {
+	    //console.log(data);
+	    //console.log(loadedMesh);
+	    for (var i = 0; i < data.features.length; i++) {
+		var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
+                //console.log(coord);
+		makeInitialTransformations(mesh, coord);
+                tampereObjects.push(mesh);
+		swimming_halls.push(mesh);
+		allObjects.push(mesh);
+                pivotPoint.add(mesh);
+		//scene.add(mesh);
+	    }
+	});
+    });
 
-    var x = coord[0];
-    x = Math.round(x / terrainWidth * origTerrainWidth);
-    var y = coord[1];
-    y = Math.round(y / terrainHeight * origTerrainHeight);
-    coord = translate(coord);
-
-    //console.log(coord);
-
-    mesh.position.set(coord[0], -coord[1], heightMap[y][x]);
-    mesh.rotation.x = Math.PI / 2;
+    loader.load("/3d/icons/icon_library.obj", "/3d/icons/icon_library.mtl", function(loadedMesh) {
+        $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:KIRJASTOT&outputFormat=json&srsName=EPSG:4326", function(data) {
+            //console.log(data);
+            //console.log(loadedMesh);
+            for (var i = 0; i < data.features.length; i++) {
+                var mesh = loadedMesh.clone();
+                mesh.scale.set(2, 2, 2);
+                if (data.features[i].geometry != null) {
+                    coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
+		    makeInitialTransformations(mesh, coord);
+                    tampereObjects.push(mesh);
+		    libraries.push(mesh);
+		    allObjects.push(mesh);
+                    pivotPoint.add(mesh);
+		    //scene.add(mesh);
+                }
+            }
+        });
+    });
 }
 
 function showOSMData() {
@@ -393,193 +419,6 @@ function showOSMData() {
     });
 }
 
-function showTampereOpenData() {
-   
-    var loader = new THREE.OBJMTLLoader();
-    loader.load("/3d/icons/icon_swimming.obj", "/3d/icons/icon_swimming.mtl", function(loadedMesh) {
-	$.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:UIMAHALLIT&outputFormat=json&srsName=EPSG:4326", function(data) {
-	    //console.log(data);
-	    //console.log(loadedMesh);
-	    for (var i = 0; i < data.features.length; i++) {
-		var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		swimming_halls.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-	    }
-	});
-    });
-
-    loader.load("/3d/icons/icon_library.obj", "/3d/icons/icon_library.mtl", function(loadedMesh) {
-        $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:KIRJASTOT&outputFormat=json&srsName=EPSG:4326", function(data) {
-            //console.log(data);
-            //console.log(loadedMesh);
-            for (var i = 0; i < data.features.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                if (data.features[i].geometry != null) {
-                    coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-		    makeInitialTransformations(mesh, coord);
-                    tampereObjects.push(mesh);
-		    libraries.push(mesh);
-		    allObjects.push(mesh);
-                    pivotPoint.add(mesh);
-		    //scene.add(mesh);
-                }
-            }
-        });
-    });
-}
-
-function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
-    var xy = {
-	minXY: calculateTileNumber(zoom, minLat, minLng),
-	maxXY: calculateTileNumber(zoom, maxLat, maxLng)
-    };
-
-    return xy;
-}
-
-function calculateTileNumber(zoom, lat, lon) {
-
-    var xy = {
-        x: undefined,
-        y: undefined,
-    };
-
-    var xtile = Math.floor((lon + 180) / 360 * (1<<zoom)) ;
-    var ytile = Math.floor((1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2 * (1<<zoom));
-    if (xtile < 0)
-	xtile = 0;
-    if (xtile >= (1<<zoom))
-	xtile = ((1<<zoom)-1);
-    if (ytile < 0)
-	ytile = 0;
-    if (ytile >= (1<<zoom))
-	ytile = ((1<<zoom)-1);
-    
-    xy.x = xtile;
-    xy.y = ytile;
-
-    return xy;
-}
-
-
-function calculateTilesBounds(tileNumbers, zoomLevel) {
-    var minX = tileNumbers.minXY.x < tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var maxX = tileNumbers.minXY.x > tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var minY = tileNumbers.minXY.y < tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-    var maxY = tileNumbers.minXY.y > tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-
-    console.log("minX, maxX, minY, maxY:", minX, maxX, minY, maxY);
-
-    var unit = 1.0 / (1 << zoomLevel);
-
-    //
-    // calculate sw
-    //
-    var sw_bounds = calculateTileBounds(minX, maxY, zoomLevel);    
-    //
-    // calculate ne
-    //
-    var ne_bounds = calculateTileBounds(maxX, minY, zoomLevel);
-
-    var bounds = {
-	sw: {
-	    lat: sw_bounds.minY,
-	    lng: sw_bounds.minX
-	},
-	ne: {
-	    lat: ne_bounds.maxY,
-	    lng: ne_bounds.maxX
-	}
-    }
-    return bounds;
-}
-
-function calculateTileBounds(tileX, tileY, zoom) {
-    var bounds = {
-        minY: tile2lat(tileY + 1, zoom),
-        maxY: tile2lat(tileY, zoom),
-        minX: tile2lon(tileX, zoom),
-        maxX: tile2lon(tileX + 1, zoom)
-    }
-
-    return bounds;
-}
-
-function tile2lon(x, zoom) {
-    return x / Math.pow(2.0, zoom) * 360.0 - 180;
-}
- 
-function tile2lat(y, zoom) {
-    var n = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, zoom);
-    return toDeg(Math.atan(sinh(n)));
-}
-
-function toDeg(rad) {
-    return rad / (Math.PI / 180);
-}
-
-function toRad(degrees){
-    return degrees * Math.PI / 180;
-}
-
-function sinh (arg) {
-  return (Math.exp(arg) - Math.exp(-arg)) / 2;
-}
-
-function modifyPlaneGeometryHeight(data) {
-
-    var URL = '/images/osm_tampere_large.jpg';
-    //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
-
-    var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
-	$("#terrain_info").text('Ladataan karttaa... valmista.');
-    });
-    //console.log(texture);
-    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
-    var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
-    var material = new THREE.MeshPhongMaterial({
-	map: texture
-    });
-    
-    //console.log(geometry.vertices.length);
-    
-    var j = 0;
-    var k = 0;
-
-    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	//var height = data[i] / 255 * 21;
-	var height = data[i] / 65535 * 21;
-	geometry.vertices[i].z = height;
-	heightMap[j][k] = height;
-	k++;
-	if (k == origTerrainWidth) {
-	    j++;
-	    k = 0;
-	}
-    }
-
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    //console.log(geometry);
-
-    var ground = new THREE.Mesh(geometry, material);
-    ground.rotation.x = -Math.PI / 2;
-
-    gameBoard = ground;
-    scene.add(gameBoard);
-
-    render();
-
-    console.log("done modifying z");
-}    
 
 function showBusses() {
     var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
@@ -776,6 +615,175 @@ function getVenuesData(data, i) {
     }
 }
 
+/*******************************************************************************
+ * Helper functionality
+ ******************************************************************************/
+
+function modifyPlaneGeometryHeight(data) {
+
+    var URL = '/images/osm_tampere_large.jpg';
+    //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
+
+    var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
+	$("#terrain_info").text('Ladataan karttaa... valmista.');
+    });
+    //console.log(texture);
+    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
+    var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
+    var material = new THREE.MeshPhongMaterial({
+	map: texture
+    });
+    
+    //console.log(geometry.vertices.length);
+    
+    var j = 0;
+    var k = 0;
+
+    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
+	//var height = data[i] / 255 * 21;
+	var height = data[i] / 65535 * 21;
+	geometry.vertices[i].z = height;
+	heightMap[j][k] = height;
+	k++;
+	if (k == origTerrainWidth) {
+	    j++;
+	    k = 0;
+	}
+    }
+
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    //console.log(geometry);
+
+    var ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+
+    gameBoard = ground;
+    scene.add(gameBoard);
+
+    render();
+
+    console.log("done modifying z");
+}    
+
+
+function translate(point) {
+  return [point[0] - (terrainWidth / 2), point[1] - (terrainHeight / 2)];
+}
+
+function makeInitialTransformations(mesh, coord) {
+
+    var x = coord[0];
+    x = Math.round(x / terrainWidth * origTerrainWidth);
+    var y = coord[1];
+    y = Math.round(y / terrainHeight * origTerrainHeight);
+    coord = translate(coord);
+
+    //console.log(coord);
+
+    mesh.position.set(coord[0], -coord[1], heightMap[y][x]);
+    mesh.rotation.x = Math.PI / 2;
+}
+
+
+function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
+    var xy = {
+	minXY: calculateTileNumber(zoom, minLat, minLng),
+	maxXY: calculateTileNumber(zoom, maxLat, maxLng)
+    };
+
+    return xy;
+}
+
+function calculateTileNumber(zoom, lat, lon) {
+
+    var xy = {
+        x: undefined,
+        y: undefined,
+    };
+
+    var xtile = Math.floor((lon + 180) / 360 * (1<<zoom)) ;
+    var ytile = Math.floor((1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2 * (1<<zoom));
+    if (xtile < 0)
+	xtile = 0;
+    if (xtile >= (1<<zoom))
+	xtile = ((1<<zoom)-1);
+    if (ytile < 0)
+	ytile = 0;
+    if (ytile >= (1<<zoom))
+	ytile = ((1<<zoom)-1);
+    
+    xy.x = xtile;
+    xy.y = ytile;
+
+    return xy;
+}
+
+
+function calculateTilesBounds(tileNumbers, zoomLevel) {
+    var minX = tileNumbers.minXY.x < tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
+    var maxX = tileNumbers.minXY.x > tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
+    var minY = tileNumbers.minXY.y < tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
+    var maxY = tileNumbers.minXY.y > tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
+
+    console.log("minX, maxX, minY, maxY:", minX, maxX, minY, maxY);
+
+    var unit = 1.0 / (1 << zoomLevel);
+
+    //
+    // calculate sw
+    //
+    var sw_bounds = calculateTileBounds(minX, maxY, zoomLevel);    
+    //
+    // calculate ne
+    //
+    var ne_bounds = calculateTileBounds(maxX, minY, zoomLevel);
+
+    var bounds = {
+	sw: {
+	    lat: sw_bounds.minY,
+	    lng: sw_bounds.minX
+	},
+	ne: {
+	    lat: ne_bounds.maxY,
+	    lng: ne_bounds.maxX
+	}
+    }
+    return bounds;
+}
+
+function calculateTileBounds(tileX, tileY, zoom) {
+    var bounds = {
+        minY: tile2lat(tileY + 1, zoom),
+        maxY: tile2lat(tileY, zoom),
+        minX: tile2lon(tileX, zoom),
+        maxX: tile2lon(tileX + 1, zoom)
+    }
+
+    return bounds;
+}
+
+function tile2lon(x, zoom) {
+    return x / Math.pow(2.0, zoom) * 360.0 - 180;
+}
+ 
+function tile2lat(y, zoom) {
+    var n = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, zoom);
+    return toDeg(Math.atan(sinh(n)));
+}
+
+function toDeg(rad) {
+    return rad / (Math.PI / 180);
+}
+
+function toRad(degrees){
+    return degrees * Math.PI / 180;
+}
+
+function sinh (arg) {
+  return (Math.exp(arg) - Math.exp(-arg)) / 2;
+}
+
 function createMesh(geom, imageFileName) {
     var texture = THREE.ImageUtils.loadTexture("/images/" + imageFileName);
     var mat = new THREE.MeshPhongMaterial();
@@ -810,11 +818,6 @@ function render() {
     renderer.clear();
     renderer.render(backgroundScene , backgroundCamera );
     renderer.render(scene, camera);
-}
-
-
-function translate(point) {
-  return [point[0] - (terrainWidth / 2), point[1] - (terrainHeight / 2)];
 }
 
 function initStats() {
