@@ -28,7 +28,7 @@ var pivotPoint = undefined;
 
 var allObjects = [];
 var tampereObjects = [];
-
+var visit_tre_objects = [];
 var pharmacies = [];
 var cafees = [];
 var shops = [];
@@ -85,6 +85,7 @@ $(document).ready( function() {
 
     scene = new Physijs.Scene;
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
+    //scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
     camera.position.set(0, 1000, 3000);
@@ -119,16 +120,15 @@ $(document).ready( function() {
     pivotPoint = new THREE.Object3D();
     scene.add(pivotPoint);
 
-    var axes = new THREE.AxisHelper(200);
-    scene.add(axes);
+    //var axes = new THREE.AxisHelper(200);
+    //scene.add(axes);
 
     addLights();
 
     setupBackground();
+
     showTerrain();
-    /*showLandmarks();
-    showExternalData();
-    //showRoads();                                                                                               
+    /*    //showRoads();                                                                                               
     addBalls();
     //console.log("done loading stuff");                                                                         
     var $loading = $('#loading').hide();*/
@@ -136,6 +136,7 @@ $(document).ready( function() {
 
 function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg');
+    texture.minFilter = THREE.LinearFilter;
     var backgroundMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(2, 2, 0),
         new THREE.MeshBasicMaterial({
@@ -293,7 +294,7 @@ function showTerrain() {
 function setupTerrainHeight() {
     var terrainLoader = new THREE.TerrainLoader();
     terrainLoader.load('/data/tampere_height.bin', function(data) {
-	console.log(data);
+	//console.log(data);
 
 	modifyPlaneGeometryHeight(data);
         
@@ -356,8 +357,15 @@ function showLandmarks() {
 		 coord = projection([data[i].lng, data[i].lat]);
 		 //console.log(coord);
 		 makeInitialTransformations(loadedMesh, coord);
+		 if (data[i].object_name == "haulitorni") {
+		     loadedMesh.position.z -= 1.4;
+		 }
+		 else if (data[i].object_name == "finlayson") {
+                     loadedMesh.position.z += 0.35;
+                 }
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
+		 allObjects.push(loadedMesh);
 		 //scene.add(loadedMesh);
 	     });
 	     })(data, i);
@@ -383,14 +391,6 @@ function showExternalData() {
     var material = new THREE.MeshLambertMaterial({
         color: 0x00ffff
     });
-    //var radius = 1;
-    //var segments = 32;
-    //var circleGeometry = new THREE.CircleGeometry( radius, segments );
-    //console.log(circleGeometry.vertices.length);
-    //var circle = new THREE.Mesh( circleGeometry, material );
-    //circle.position.set(60, 40, 6); // top left corner above map
-    //circle.position.set(coord[0], coord[1], 3.3);
-    //scene.add( circle );
 
     showTampereOpenData();
 
@@ -403,24 +403,15 @@ function showExternalData() {
 	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	clefGeometry = geometry;
 
-	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
     });
 
-    /*loader.load("/3d/bus.stl", function (geometry) {
-        console.log(geometry);
-	busGeometry = geometry;
-
-	//setInterval(showBusses, 1000);
-    });*/
-
-    showVisitTampereLocations('http://visittampere.fi/api/search', 0);
+    //showVisitTampereLocations('http://visittampere.fi/api/search', 0);
 
     var loader = new THREE.OBJMTLLoader();
 
     loader.load("/3d/bussi.obj", "/3d/bussi.mtl", function(loadedMesh) {
 	busMesh = loadedMesh;
-
-	render();
 
         busUpdateIntervalID = setInterval(showBusses, 1000);
     });
@@ -436,13 +427,14 @@ function makeInitialTransformations(mesh, coord) {
     coord = translate(coord);
 
     //console.log(coord);
+
     mesh.position.set(coord[0], -coord[1], heightMap[y][x]);
     mesh.rotation.x = Math.PI / 2;
 }
 
 function showOSMData() {
     
-    /*var loader = new THREE.OBJMTLLoader();
+    var loader = new THREE.OBJMTLLoader();
     loader.load("/3d/icons/icon_pharmacy.obj", "/3d/icons/icon_pharmacy.mtl", function(loadedMesh) {
 	$.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpharmacy%5D%3B%0Aout%3B", function(data) {
 	    //console.log("osm:", data);
@@ -454,7 +446,9 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
 		tampereObjects.push(mesh);
 		pharmacies.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
 	    }
 	});
     });
@@ -470,7 +464,9 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		banks.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
             }
         });
     });
@@ -486,7 +482,9 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		cafees.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
             }
         });
     });
@@ -502,7 +500,9 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		shops.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
             }
         });
     });
@@ -518,7 +518,9 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		mail_boxes.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
             }
         });
     });
@@ -534,10 +536,12 @@ function showOSMData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		post_offices.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
             }
         });
-    });*/
+    });
 }
 
 function showTampereOpenData() {
@@ -555,7 +559,9 @@ function showTampereOpenData() {
 		makeInitialTransformations(mesh, coord);
                 tampereObjects.push(mesh);
 		swimming_halls.push(mesh);
+		allObjects.push(mesh);
                 pivotPoint.add(mesh);
+		//scene.add(mesh);
 	    }
 	});
     });
@@ -590,7 +596,9 @@ function showTampereOpenData() {
 		    makeInitialTransformations(mesh, coord);
                     tampereObjects.push(mesh);
 		    libraries.push(mesh);
+		    allObjects.push(mesh);
                     pivotPoint.add(mesh);
+		    //scene.add(mesh);
                 }
             }
         });
@@ -781,7 +789,7 @@ function sinh (arg) {
 
 function modifyPlaneGeometryHeight(data) {
 
-    var URL = '/images/osm_tampere_large.png';
+    var URL = '/images/osm_tampere_large.jpg';
     
     var texture = THREE.ImageUtils.loadTexture(URL);
     //console.log(texture);
@@ -827,6 +835,8 @@ function modifyPlaneGeometryHeight(data) {
     gameBoard = ground;
     scene.add(gameBoard);
 
+    render();
+
     console.log("done modifying z");
 }    
 
@@ -870,17 +880,18 @@ function showBusses() {
 		//console.log(mesh);
 		var height = 0.25967699344000716;
 		coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
-		//var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-		//var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+		var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+		var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		//console.log(x, y);
-		//if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-		makeInitialTransformations(mesh, coord);
+		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+		    makeInitialTransformations(mesh, coord);
 		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
 		    busses.push(mesh);
 		    pivotPoint.add(mesh);
 		    allObjects.push(mesh);
-		//}
+		    //scene.add(mesh);
+		}
 	    }
 	}
     });
@@ -897,8 +908,8 @@ function showVisitTampereLocations(URL, offset) {
 	lang: 'fi'
     }
 
-    /*$.getJSON(URL, params, function (data) {
-	console.log(data);
+    $.getJSON(URL, params, function (data) {
+	//console.log(data);
 	
 	for (var i = 0; i < data.length; i++) {
 	    var postcode = null;
@@ -922,26 +933,63 @@ function showVisitTampereLocations(URL, offset) {
 	    
 	    if (full_address != null) {
 	
-	    // TODO
-	    //encodeURIComponent(full_address.split(' ').join('+'));
-	    
-		var addr = full_address.split(' ').join('+');
+		var addr = full_address.replace(/, /g, '%2C').replace(/ /g, '+');
+		//console.log(addr);
 		
-		var params = {
-                    address: addr,
-                    key: 'AIzaSyAy7EmQA9bx9TCcHaN-Llb62-pDGrePSII'
-		};
+		//var encoded_addr = encodeURIComponent(addr);
+		//console.log(encoded_addr);
 
-		$.getJSON('https://maps.googleapis.com/maps/api/geocode/json', params, function (data) {
-		    console.log(data);
+		//var params = {
+                //    address: addr,
+                //    lat: '',
+		//    lng: '',
+		//    language: 'fin'
+		//};
+
+		$.getJSON('http://api.okf.fi/gis/1/geocode.json?address=' + addr + '&lat=&lng=&language=fin', function(data) {
+		    //console.log(data);
+
+		    var textureNames = ["Rock_rauta_rakkaus_1024x1024.png", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
+
+		    if (data.status == "OK") {
+                        for (var j = 0; j < data.results.length; j++) {
+                            for (var k = 0; k < data.results[j].address_components.length; k++) {
+                                if (data.results[j].address_components[k].types[0] == 'administrative_area_level_3') {
+                                    if (data.results[j].address_components[k].long_name == 'Tampere') { // <--- TODO!!!!
+					var coord = projection([data.results[j].geometry.location.lng, data.results[j].geometry.location.lat]);
+					    //console.log(coord);
+					var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+					var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+					
+					if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+              				    // show cube
+					    var dim = 5;
+					    var boxGeometry = new THREE.BoxGeometry(dim, dim, dim);
+					    var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 3))]);
+					
+					    //mesh.scale.set(2, 2, 2);
+
+					    makeInitialTransformations(mesh, coord);
+					    mesh.position.z += dim / 2 * 1.2;
+					    visit_tre_objects.push(mesh);
+					    allObjects.push(mesh);
+					    pivotPoint.add(mesh);
+					    //scene.add(mesh);
+					}
+                                    }
+                                    //break;
+                                }
+                            }
+                        }
+		    }
 		});
 	    }
 	}
 
 	if (data.length >= 50) {
-	    //showVisitTampereLocations(URL, offset + 50);
+	    showVisitTampereLocations(URL, offset + 50);
 	}
-    });*/
+    });
 }
 
 function showTeostoVenues(URL) {
@@ -999,6 +1047,7 @@ function getVenuesData(data, i) {
 			    pivotPoint.add(mesh);
 			    clefs.push(mesh);
 			    allObjects.push(mesh);
+			    //scene.add(mesh);
 			}
 		    }
 		}).done(function(data, i) {
@@ -1034,6 +1083,10 @@ function render() {
 	tampereObjects[i].rotation.y += 0.01;
     }
 
+    for (var i = 0; i < visit_tre_objects.length; i++) {
+	visit_tre_objects[i].rotation.y += 0.02;
+    }
+
     controls.update();
     requestAnimationFrame(render);
     
@@ -1062,7 +1115,7 @@ function render() {
     //if (gameBoard.rotation.x < -0.4) direction = 1;
     //if (gameBoard.rotation.x > 0.4) direction = -1;
     //gameBoard.__dirtyRotation = true;
-    scene.simulate();
+    //scene.simulate();
 }
 
 $(window).keydown(function (e) {
@@ -1121,12 +1174,12 @@ function onClick(event) {
 
     if (event.which == 1) {
 
-	var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY - 50) / renderer.domElement.height ) * 2 + 1);
+	var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY) / renderer.domElement.height ) * 2 + 1);
 	
 	var raycaster = new THREE.Raycaster();
 	raycaster.setFromCamera( mouse, camera );
 
-	var intersects = raycaster.intersectObjects(allObjects);
+	var intersects = raycaster.intersectObjects(allObjects, true);
 
 	for (var i = 0; i < intersects.length; i++) {
             //console.log(intersects[0]);
