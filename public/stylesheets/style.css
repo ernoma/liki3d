@@ -12,10 +12,20 @@ body {
 
 #loading {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 50px;
+    left: 0%;
     z-index: 100;
+    height: calc(100% - 50px);
+    width: 100%;
 }
+
+#loading_text {
+    position: absolute;
+    top: calc(50% + 50px);
+    width: 100%;
+    text-align: center;
+}
+
 
 #Stats-output {
     position: absolute;

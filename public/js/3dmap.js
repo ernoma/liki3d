@@ -12,8 +12,8 @@ var controls = undefined;
 var terrainWidth = 2048;
 var terrainHeight = 2048;
 
-var origTerrainWidth = 700;
-var origTerrainHeight = 700;
+var origTerrainWidth = 300;
+var origTerrainHeight = 300;
 
 var projection = undefined;
 var heightMap = undefined;
@@ -62,11 +62,12 @@ $(document).ready( function() {
 	hwaccel: false, // Whether to use hardware acceleration
 	className: 'spinner', // The CSS class to assign to the spinner
 	zIndex: 2e9, // The z-index (defaults to 2000000000)
-	top: '0%', // Top position relative to parent
+	top: '50%', // Top position relative to parent
 	left: '50%' // Left position relative to parent
     };
     var target = document.getElementById('spinner');
     var spinner = new Spinner(opts).spin(target);
+    $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
     Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
     Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
@@ -79,7 +80,7 @@ $(document).ready( function() {
     scene.setGravity(new THREE.Vector3(0, -1000, 0));
 
     camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
-    camera.position.set(0, 1000, 3000);
+    camera.position.set(0, 300, 600);
     camera.lookAt(scene.position);
 
     renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -108,15 +109,20 @@ $(document).ready( function() {
     //var axes = new THREE.AxisHelper(200);
     //scene.add(axes);
 
+    $("#loading_text").append('<br><span id="light_info">Laitetaan valot päälle</span>');
     addLights();
-
+    
+    $("#loading_text").append('<br><span id="bg_info">Ladataan taustakuvaa...</span>');
     setupBackground();
 
+    $("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
     showTerrain();
 });
 
 function setupBackground() {
-    var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg');
+    var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg', undefined, function() {
+	$("#bg_info").text('Ladataan taustakuva... valmista.');
+    });
     texture.minFilter = THREE.LinearFilter;
     var backgroundMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(2, 2, 0),
@@ -139,18 +145,30 @@ function showTerrain() {
 
 function setupTerrainHeight() {
     var terrainLoader = new THREE.TerrainLoader();
+    $("#loading_text").append('<br><span id="height_info">Ladataan kartan korkeustietoja...</span>');
     terrainLoader.load('/data/tampere_height.bin', function(data) {
 	//console.log(data);
 
+    /*var data = [];
+    for (var i = 0; i < origTerrainHeight; i++) {
+	for (var j = 0; j < origTerrainWidth; j++) {
+	    heightMap[i][j] = 0;
+	}
+    }*/
 	modifyPlaneGeometryHeight(data);
         
+	$("#loading_text").append('<br><span id="landmark_info">Ladataan maamerkkejä...</span>');
 	showLandmarks();
+
+	$("#loading_text").append('<br><span id="external_data_info">Ladataan paikkoja ja busseja...</span>');
 	showExternalData();
+
+	$("#height_info").text('Ladataan kartan korkeustietoja... valmista.');
 
 	var $loading = $('#loading').hide();
 
     }, function(event) {
-	//console.log(event);
+	console.log(event);
     }, function (event) {
 	console.log(event);
     });
@@ -178,6 +196,8 @@ function addLights() {
     
     lensFlare.position.copy(spotLightFlare.position);
     scene.add(lensFlare);
+
+    $("#light_info").text('Laitetaan valot päälle... valmista.');
 }
 
 function showLandmarks() {
@@ -204,6 +224,10 @@ function showLandmarks() {
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
 		 allObjects.push(loadedMesh);
+
+		 if (landmarks.length == data.length) {
+		     $("#landmark_info").text('Ladataan maamerkkejä... valmista.');
+		 }
 		 //scene.add(loadedMesh);
 	     });
 	     })(data, i);
@@ -218,7 +242,7 @@ function showExternalData() {
 
     showTampereOpenData();
 
-    showOSMData();
+    //showOSMData();
 
     var loader = new THREE.STLLoader();
 
@@ -227,10 +251,10 @@ function showExternalData() {
 	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	clefGeometry = geometry;
 
-	showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
     });
 
-    showVisitTampereLocations('http://visittampere.fi/api/search', 0);
+    //showVisitTampereLocations('http://visittampere.fi/api/search', 0);
 
     var loader = new THREE.OBJMTLLoader();
 
@@ -512,9 +536,13 @@ function sinh (arg) {
 function modifyPlaneGeometryHeight(data) {
 
     var URL = '/images/osm_tampere_large.jpg';
-    
-    var texture = THREE.ImageUtils.loadTexture(URL);
+    //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
+
+    var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
+	$("#terrain_info").text('Ladataan karttaa... valmista.');
+    });
     //console.log(texture);
+    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
     var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
     var material = new THREE.MeshPhongMaterial({
 	map: texture
@@ -526,7 +554,8 @@ function modifyPlaneGeometryHeight(data) {
     var k = 0;
 
     for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	var height = data[i] / 255 * 21;
+	//var height = data[i] / 255 * 21;
+	var height = data[i] / 65535 * 21;
 	geometry.vertices[i].z = height;
 	heightMap[j][k] = height;
 	k++;

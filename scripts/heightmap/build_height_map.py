@@ -30,16 +30,16 @@ with open('gdalwarp_params.txt', 'r') as f:
     #print parts[2][:-1]
     gdalwarp_command += parts[0] + ' -te ' + parts[1] + ' -ts ' + parts[2][:-1] + ' temp/tampere.vrt temp/tampere_height.tif'
     #print gdalwarp_command
-    call(gdalwarp_command, shell=True)
+    #call(gdalwarp_command, shell=True)
 
 datafile = gdal.Open("temp/tampere_height.tif")
 band = datafile.GetRasterBand(1)
 minmax = band.ComputeRasterMinMax()
 gdal_translate_command += str(math.floor(minmax[0])) + ' ' + str(math.ceil(minmax[1])) + ' 0 65535 -outsize 50% 50% -ot UInt16 -of PNG temp/tampere_height.tif temp/tampere_height.png'
 #print gdal_translate_command
-call(gdal_translate_command, shell=True) 
+#call(gdal_translate_command, shell=True) 
 
-gdal_translate_bin_command += str(math.floor(minmax[0])) + ' ' + str(math.ceil(minmax[1])) + ' 0 255 -outsize 700 700 -ot Byte -of ENVI temp/tampere_height.tif temp/tampere_height.bin'
+gdal_translate_bin_command += str(math.floor(minmax[0])) + ' ' + str(math.ceil(minmax[1])) + ' 0 65535 -outsize 300 300 -ot Uint16 -of ENVI temp/tampere_height.tif temp/tampere_height.bin'
 #print gdal_translate_bin_command
 call(gdal_translate_bin_command, shell=True)
 

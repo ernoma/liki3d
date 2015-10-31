@@ -15,8 +15,8 @@ THREE.TerrainLoader.prototype = {
 	    if ( onLoad !== undefined ) {
 		request.addEventListener( 'load', function ( event ) {
 		    //console.log(event);
-		    onLoad( new Uint8Array( event.target.response ) );
-		    //onLoad( new Uint16Array( event.target.response ) );
+		    //onLoad( new Uint8Array( event.target.response ) );
+		    onLoad( new Uint16Array( event.target.response ) );
 		    scope.manager.itemEnd( url );
 		}, false );
 	    }
