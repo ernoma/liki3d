@@ -69,15 +69,16 @@ $(document).ready( function() {
     var spinner = new Spinner(opts).spin(target);
     $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
-    Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
-    Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
+    //Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
+    //Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
 
     stats = initStats();
 
     //console.log(places);
 
-    scene = new Physijs.Scene;
-    scene.setGravity(new THREE.Vector3(0, -1000, 0));
+    //scene = new Physijs.Scene;
+    //scene.setGravity(new THREE.Vector3(0, -1000, 0));
+    scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
     camera.position.set(0, 300, 600);
@@ -864,7 +865,7 @@ function onClick(event) {
 $( window ).click(onClick);
 
 
-function loadTexture(path) {
+/*function loadTexture(path) {
     var deferred = Q.defer();
 
     THREE.ImageUtils.loadTexture(path, null, function (loaded) {
@@ -904,7 +905,7 @@ function loadOBJMTLModel(objPath, mtlPath) {
     });
 
     return deferred.promise;
-}
+}*/
 
 function createLegend() {
     
