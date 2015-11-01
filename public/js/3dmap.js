@@ -1,4 +1,3 @@
-
 var scene = undefined;
 var camera = undefined;
 var renderer = undefined;
@@ -24,6 +23,9 @@ var pivotPoint = undefined;
 var allObjects = [];
 var tampereObjects = [];
 var visit_tre_objects = [];
+var clefs = [];
+var busses = [];
+var landmarks = [];
 var pharmacies = [];
 var cafees = [];
 var shops = [];
@@ -32,9 +34,9 @@ var banks = [];
 var mail_boxes = [];
 var post_offices = [];
 var swimming_halls = [];
-var clefs = [];
-var busses = [];
-var landmarks = [];
+
+var visit_tre_locations = [];
+var teosto_locations = [];
 
 var clefGeometry = undefined;
 var busMesh = undefined;
@@ -222,7 +224,6 @@ function showLandmarks() {
 
 		 if (landmarks.length == data.length) {
 		     $("#landmark_info").text('Ladataan maamerkkejä... valmista.');
-		     $("#loading_text").append('<br><span id="external_data_info">Ladataan paikkoja ja busseja...</span>');
 		     showExternalData();
 		 }
 		 //scene.add(loadedMesh);
@@ -233,190 +234,65 @@ function showLandmarks() {
 }
 
 function showExternalData() {
-    var material = new THREE.MeshLambertMaterial({
-        color: 0x00ffff
-    });
     
-    showTampereOpenData();
+    $("#loading_text").append('<br><span id="external_data_info">Ladataan pienoismalleja...</span>');
 
-    //showOSMData();
-
-    var loader = new THREE.STLLoader();
-
-    loader.load("/3d/clef.stl", function (geometry) {
-        //console.log(geometry);
-	geometry.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
-	clefGeometry = geometry;
-
-	//showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
-    });
-
-    //showVisitTampereLocations('http://visittampere.fi/api/search', 0);
-    //var $loading = $('#loading').hide();
-
-    var loader = new THREE.OBJMTLLoader();
-
-    loader.load("/3d/bussi.obj", "/3d/bussi.mtl", function(loadedMesh) {
-	busMesh = loadedMesh;
-
-        busUpdateIntervalID = setInterval(showBusses, 1000);
-    });
-
+    showTampereOpenData()
+	.then(function (result) { return loadOBJMTLModel("/3d/bussi")})
+	.then(function (model) {
+	    busMesh = model;
+	    busUpdateIntervalID = setInterval(showBusses, 1000);
+	    return loadSTLModel("clef");
+	})
+	.then(function (model) {
+	    model.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
+	    clefGeometry = model;
+	    showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	    showVisitTampereLocations('http://visittampere.fi/api/search', 0);
+	    $('#loading').hide();
+	})
+    	.then(function (result) { return showOSMData();})
+	.catch(function(error) {
+	    console.log("Error: ", error);
+	}).progress(function(event) {
+	    console.log("progress: ", event);
+	    // TODO notify user
+	})
+	.done();
 }
 
 function showTampereOpenData() {
-   
-    var loader = new THREE.OBJMTLLoader();
-    loader.load("/3d/icons/icon_swimming.obj", "/3d/icons/icon_swimming.mtl", function(loadedMesh) {
-	$.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:UIMAHALLIT&outputFormat=json&srsName=EPSG:4326", function(data) {
-	    //console.log(data);
-	    //console.log(loadedMesh);
-	    for (var i = 0; i < data.features.length; i++) {
-		var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		swimming_halls.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-	    }
+     var promise = loadOBJMTLModel("/3d/icons/icon_swimming")
+	.then(function (model) { 
+	    //console.log("model", model);
+	    return getTampereOpenData(model, "UIMAHALLIT", swimming_halls);
+	})
+	.then(function (result) {
+	    //console.log("going to read library");
+	    return loadOBJMTLModel("/3d/icons/icon_library");
+	})
+	.then(function (model) {
+	    //console.log("model", model);
+	    return getTampereOpenData(model, "KIRJASTOT", libraries);
 	});
-    });
-
-    loader.load("/3d/icons/icon_library.obj", "/3d/icons/icon_library.mtl", function(loadedMesh) {
-        $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:KIRJASTOT&outputFormat=json&srsName=EPSG:4326", function(data) {
-            //console.log(data);
-            //console.log(loadedMesh);
-            for (var i = 0; i < data.features.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                if (data.features[i].geometry != null) {
-                    coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-		    makeInitialTransformations(mesh, coord);
-                    tampereObjects.push(mesh);
-		    libraries.push(mesh);
-		    allObjects.push(mesh);
-                    pivotPoint.add(mesh);
-		    //scene.add(mesh);
-                }
-            }
-        });
-    });
+    
+    return promise;
 }
 
 function showOSMData() {
-    
-    var loader = new THREE.OBJMTLLoader();
-    loader.load("/3d/icons/icon_pharmacy.obj", "/3d/icons/icon_pharmacy.mtl", function(loadedMesh) {
-	$.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpharmacy%5D%3B%0Aout%3B", function(data) {
-	    //console.log("osm:", data);
-	    for (var i = 0; i < data.elements.length; i++) {
-		var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-		tampereObjects.push(mesh);
-		pharmacies.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-	    }
-	});
-    });
-
-    loader.load("/3d/icons/icon_bank.obj", "/3d/icons/icon_bank.mtl", function(loadedMesh) {
-        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dbank%5D%3B%0Aout%3B", function(data) {
-            //console.log("osm:", data);
-            for (var i = 0; i < data.elements.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		banks.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-            }
-        });
-    });
-
-    loader.load("/3d/icons/icon_cafe.obj", "/3d/icons/icon_cafe.mtl", function(loadedMesh) {
-        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dcafe%5D%3B%0Aout%3B", function(data) {
-            //console.log("osm:", data);
-            for (var i = 0; i < data.elements.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		cafees.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-            }
-        });
-    });
-
-    loader.load("/3d/icons/icon_shop.obj", "/3d/icons/icon_shop.mtl", function(loadedMesh) {
-        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bshop%3Dsupermarket%5D%3B%0Aout%3B", function(data) {
-            //console.log("osm:", data);
-            for (var i = 0; i < data.elements.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		shops.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-            }
-        });
-    });
-
-    loader.load("/3d/icons/icon_letter.obj", "/3d/icons/icon_letter.mtl", function(loadedMesh) {
-        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpost_box%5D%3B%0Aout%3B", function(data) {
-            //console.log("osm:", data);
-            for (var i = 0; i < data.elements.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		mail_boxes.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-            }
-        });
-    });
-
-    loader.load("/3d/icons/icon_post_office.obj", "/3d/icons/icon_post_office.mtl", function(loadedMesh) {
-        $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5Bamenity%3Dpost_office%5D%3B%0Aout%3B", function(data) {
-            //console.log("osm:", data);
-            for (var i = 0; i < data.elements.length; i++) {
-                var mesh = loadedMesh.clone();
-                mesh.scale.set(2, 2, 2);
-                coord = projection([data.elements[i].lon, data.elements[i].lat]);
-                //console.log(coord);
-		makeInitialTransformations(mesh, coord);
-                tampereObjects.push(mesh);
-		post_offices.push(mesh);
-		allObjects.push(mesh);
-                pivotPoint.add(mesh);
-		//scene.add(mesh);
-            }
-        });
-    });
+ 
+    return loadOBJMTLModel("/3d/icons/icon_pharmacy")
+    .then(function (model) { return getOSMData(model, "amenity%3Dpharmacy", pharmacies) })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_cafe") })
+    .then(function (model) { return getOSMData(model, "amenity%3Dcafe", cafees) })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_shop")})
+    .then(function (model) { return getOSMData(model, "shop%3Dsupermarket", shops) })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_letter") })
+    .then(function (model) { return getOSMData(model, "amenity%3Dpost_box", mail_boxes) })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_post_office") })
+    .then(function (model) { return getOSMData(model, "amenity%3Dpost_office", post_offices) })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_bank") })
+    .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks) })
 }
 
 
@@ -442,6 +318,7 @@ function showBusses() {
                     var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 			makeInitialTransformations(busses[j], coord);
+			// TODO: calculate bearing from the previous location
 			busses[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    }
 		    break;
@@ -513,41 +390,63 @@ function showVisitTampereLocations(URL, offset) {
 		var addr = full_address.replace(/, /g, '%2C').replace(/ /g, '+');
 		//console.log(addr);
 		
-		$.getJSON('http://api.okf.fi/gis/1/geocode.json?address=' + addr + '&lat=&lng=&language=fin', function(data) {
-		    //console.log(data);
+		$.getJSON('http://api.okf.fi/gis/1/geocode.json?address=' + addr + '&lat=&lng=&language=fin',
+			  (function(i) {
+			      return function(result) {
+				  //console.log(result);
 
-		    var textureNames = ["Rock_rauta_rakkaus_1024x1024.png", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
+				  var textureNames = ["Rock_rauta_rakkaus_1024x1024.png"];
 
-		    if (data.status == "OK") {
-                        for (var j = 0; j < data.results.length; j++) {
-                            for (var k = 0; k < data.results[j].address_components.length; k++) {
-                                if (data.results[j].address_components[k].types[0] == 'administrative_area_level_3') {
-                                    if (data.results[j].address_components[k].long_name == 'Tampere') { // <--- TODO!!!!
-					var coord = projection([data.results[j].geometry.location.lng, data.results[j].geometry.location.lat]);
-					    //console.log(coord);
-					var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-					var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-					
-					if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-              				    // show cube
-					    var dim = 5;
-					    var boxGeometry = new THREE.BoxGeometry(dim, dim, dim);
-					    var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 3))]);
-					
-					    makeInitialTransformations(mesh, coord);
-					    mesh.position.z += dim / 2 * 1.2;
-					    visit_tre_objects.push(mesh);
-					    allObjects.push(mesh);
-					    pivotPoint.add(mesh);
-					    //scene.add(mesh);
-					}
-                                    }
-                                    //break;
-                                }
-                            }
-                        }
-		    }
-		});
+				  if (result.status == "OK") {
+				      for (var j = 0; j < result.results.length; j++) {
+					  for (var k = 0; k < result.results[j].address_components.length; k++) {
+					      if (result.results[j].address_components[k].types[0] == 'administrative_area_level_3') {
+						  if (result.results[j].address_components[k].long_name == 'Tampere') { // <--- TODO!!!!
+						      
+						      var found = false;
+						      
+						      for (var m = 0; m < visit_tre_locations.length; m++) {
+							  if (visit_tre_locations[m].lng == result.results[j].geometry.location.lng &&
+							      visit_tre_locations[m].lat == result.results[j].geometry.location.lat)
+							  {
+							      visit_tre_locations[m].mesh.info.push(data[i].title);
+							      //console.log("found in locations");
+							      found = true;
+							      break;
+							  }
+						      }
+					    
+						      if (!found) {
+							  var coord = projection([result.results[j].geometry.location.lng, result.results[j].geometry.location.lat]);
+							  //console.log(coord);
+							  
+							  var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+							  var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+							  
+							  if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+              						      // show cube
+							      var dim = 5;
+							      var boxGeometry = new THREE.BoxGeometry(dim, dim, dim);
+							      var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 1))]);
+							      
+							      makeInitialTransformations(mesh, coord);
+							      mesh.position.z += dim / 2 * 1.2;
+							      mesh.info = [];
+							      mesh.info.push(data[i].title);
+							      visit_tre_objects.push(mesh);
+							      allObjects.push(mesh);
+							      pivotPoint.add(mesh);
+							      //scene.add(mesh);
+							      visit_tre_locations.push({mesh: mesh, lng: result.results[j].geometry.location.lng, lat: result.results[j].geometry.location.lat});
+							  }
+						      } // if (!found)
+						  }
+						  //break;
+					      }
+					  }
+				      }
+				  }}
+			  }(i)));
 	    }
 	}
 
@@ -576,7 +475,18 @@ function getVenuesData(data, i) {
 		    //console.log(result.venue);
 
 		    var found = false;
-			
+		    
+                    for (var m = 0; m < teosto_locations.length; m++) {
+                        if (teosto_locations[m].lng == result.venue.place.geoCoordinates.longitude &&
+                            teosto_locations[m].lat == result.venue.place.geoCoordinates.latitude)
+                        {
+			    teosto_locations[m].mesh.info.push(result.venue.name);
+                            //console.log("teosto venue found in locations");
+                            found = true;
+                            break;
+                        }
+                    }
+		    
 		    if (!found) {
 
 			var height = 3.7648086547851562 * 0.4;
@@ -595,12 +505,16 @@ function getVenuesData(data, i) {
 			if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 			    makeInitialTransformations(mesh, coord);
 			    mesh.position.z += height * 3;
-			    
+			    mesh.info = [];
+			    mesh.info.push(result.venue.name);
 			    pivotPoint.add(mesh);
 			    clefs.push(mesh);
 			    allObjects.push(mesh);
 			    //scene.add(mesh);
+
+			    teosto_locations.push({mesh: mesh, lng: result.venue.place.geoCoordinates.longitude, lat: result.venue.place.geoCoordinates.latitude});
 			}
+
 		    }
 		}).done(function(data, i) {
 		    return function(result) {
@@ -786,7 +700,7 @@ function sinh (arg) {
 
 function createMesh(geom, imageFileName) {
     var texture = THREE.ImageUtils.loadTexture("/images/" + imageFileName);
-    var mat = new THREE.MeshPhongMaterial();
+    var mat = new THREE.MeshPhongMaterial({color: 0xffffff, specular: 0xffffff, shininess: 160, metal: true});
     mat.map = texture;
     
     var mesh = new THREE.Mesh(geom, mat);
@@ -867,6 +781,66 @@ function onClick(event) {
 
 $( window ).click(onClick);
 
+$( window ).mousemove(function(event) {
+     var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY) / renderer.domElement.height ) * 2 + 1);
+
+        var raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera( mouse, camera );
+
+        var intersects = raycaster.intersectObjects(visit_tre_objects, false);
+
+        for (var i = 0; i < intersects.length; i++) {
+	    console.log(intersects[i].object.info);
+	}
+});
+
+function getTampereOpenData(loadedMesh, name, objects) {
+    var deferred = Q.defer();
+
+    $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:" + name + "&outputFormat=json&srsName=EPSG:4326", function(data) {
+	//console.log(data);
+	for (var i = 0; i < data.features.length; i++) {
+	    var mesh = loadedMesh.clone();
+            mesh.scale.set(2, 2, 2);
+            coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
+            //console.log(coord);
+	    makeInitialTransformations(mesh, coord);
+            tampereObjects.push(mesh);
+	    objects.push(mesh);
+	    allObjects.push(mesh);
+            pivotPoint.add(mesh);
+	    //scene.add(mesh);
+	}
+
+	deferred.resolve();
+    });
+
+    return deferred.promise;
+}
+
+function getOSMData(loadedMesh, filter, objects) {
+    var deferred = Q.defer();
+
+    $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5B" + filter + "%5D%3B%0Aout%3B", function(data) {
+	//console.log("osm:", data);
+	for (var i = 0; i < data.elements.length; i++) {
+	    var mesh = loadedMesh.clone();
+            mesh.scale.set(2, 2, 2);
+            coord = projection([data.elements[i].lon, data.elements[i].lat]);
+            //console.log(coord);
+	    makeInitialTransformations(mesh, coord);
+	    tampereObjects.push(mesh);
+	    objects.push(mesh);
+	    allObjects.push(mesh);
+            pivotPoint.add(mesh);
+	    //scene.add(mesh);
+	}
+
+	deferred.resolve();
+    });
+
+    return deferred.promise;
+}
 
 /*function loadTexture(path) {
     var deferred = Q.defer();
@@ -878,16 +852,19 @@ $( window ).click(onClick);
     });
 
     return deferred.promise;
-}
+}*/
 
-function loadSTLModel(path) {
+function loadSTLModel(name) {
 
     var deferred = Q.defer();
     
     var loader = new THREE.STLLoader();
 
-    loader.load(path, function (loaded) {
+    loader.load("/3d/" + name + ".stl", function (loaded) {
+	loaded.name = name;
 	deferred.resolve(loaded);
+    }, function (progress) {
+        deferred.notify(progress);
     }, function (error) {
         deferred.reject(error);
     });
@@ -895,20 +872,23 @@ function loadSTLModel(path) {
     return deferred.promise;
 }
 
-function loadOBJMTLModel(objPath, mtlPath) {
+function loadOBJMTLModel(path) {
 
     var deferred = Q.defer();
 
     var loader = new THREE.OBJMTLLoader();
 
-    loader.load(objPath, mtlPath, function (loaded) {
+    loader.load(path + ".obj", path + ".mtl", function (loaded) {
+	loaded.name = path;
 	deferred.resolve(loaded);
+    }, function (progress) {
+	deferred.notify(progress);
     }, function (error) {
         deferred.reject(error);
     });
 
     return deferred.promise;
-}*/
+}
 
 function createLegend() {
     
@@ -927,17 +907,17 @@ function createLegend() {
 	    $('input[name="' + data[i].plural_name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
 		//console.log(this); // DOM element
 		//console.log(event); // jQuery event
-		console.log(state); // true | false
+		//console.log(state); // true | false
 
 		if (state == true) {
-		    console.log("showing: " + this.name);
+		    //console.log("showing: " + this.name);
 		    var objects = window[this.name];
 		    for (var j = 0; j < objects.length; j++) {
 			objects[j].traverse(function(child){child.visible = true;});
 		    }
 		}
 		else {
-		    console.log("hiding: " + this.name);
+		    //console.log("hiding: " + this.name);
 		    var objects = window[this.name];
                     for (var j = 0; j < objects.length; j++) {
 			objects[j].traverse(function(child){child.visible = false;});
