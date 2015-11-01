@@ -401,7 +401,7 @@ function showVisitTampereLocations(URL, offset) {
 				      for (var j = 0; j < result.results.length; j++) {
 					  for (var k = 0; k < result.results[j].address_components.length; k++) {
 					      if (result.results[j].address_components[k].types[0] == 'administrative_area_level_3') {
-						  if (result.results[j].address_components[k].long_name == 'Tampere') { // <--- TODO!!!!
+						  if (data[i].contact_info.city != null && result.results[j].address_components[k].long_name == data[i].contact_info.city) {
 						      
 						      var found = false;
 						      
