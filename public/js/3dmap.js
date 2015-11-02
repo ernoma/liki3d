@@ -50,6 +50,7 @@ var overpass_server = "http://overpass.osm.rambler.ru/cgi/interpreter"; // http:
 $(document).ready( function() {
 
     createLegend();
+    createMinimizeEventHandlers();
 
     var opts = {
 	lines: 13, // The number of lines to draw
@@ -119,7 +120,7 @@ $(document).ready( function() {
     
     $("#loading_text").append('<br><span id="bg_info">Ladataan taustakuvaa...</span>');
     setupBackground();
-});
+}); // $(document).ready
 
 /*******************************************************************************
  * Setup functionality
@@ -549,7 +550,7 @@ function getVenuesData(data, i) {
 			getVenuesData(data, i+1);
 		    };
 		}(data, i)) // getJSON
-	    }, 500); // setTimeout
+	    }, 100); // setTimeout
     }
     else if (data.response_meta.next != "undefined") {
 	showTeostoVenues(data.response_meta.next);
@@ -1013,6 +1014,45 @@ function loadOBJMTLModel(path) {
     return deferred.promise;
 }
 
+function createMinimizeEventHandlers() {
+    $('#legend_min_href').on('click', function(event) {
+	event.preventDefault();
+	if ($('#legend_min_img').attr('src') == "/images/arrow_carrot-down.png") {
+	    $('#legend_items').hide();
+	    $('#legend').css('height', 30);
+	    $('#legend').css('width', 160);
+	    $('#legend_min_img').attr('src', "/images/arrow_carrot-up.png");
+	}
+	else {
+	    $('#legend_items').show();
+            $('#legend').css('height', 460);
+	    $('#legend').css('width', 230);
+            $('#legend_min_img').attr('src', "/images/arrow_carrot-down.png");
+	}
+    });
+
+    $('#loading_min_href').on('click', function(event) {
+        event.preventDefault();
+        if ($('#loading_min_img').attr('src') == "/images/arrow_carrot-down.png") {
+            $('#loading_items').hide();
+            $('#loading').css('height', 30);
+            //$('#loading').css('width', '25%');
+            $('#loading_min_img').attr('src', "/images/arrow_carrot-up.png");
+        }
+        else {
+            $('#loading_items').show();
+            $('#loading').css('height', 'calc(50% - 50px)');
+            //$('#loading').css('width', '25%');
+            $('#loading_min_img').attr('src', "/images/arrow_carrot-down.png");
+        }
+    });
+
+    $('#loading_close_href').on('click', function(event) {
+        event.preventDefault();
+	$('#loading').hide();
+    });
+}
+
 function createLegend() {
     
     d3.csv("data/legend.csv", function(data) {
@@ -1025,7 +1065,7 @@ function createLegend() {
 	    item += '<div class="legend_item_column"><input type="checkbox" name="' +  data[i].plural_name + '" checked data-on-text="Näytä" data-off-text="Piilota" id="cb_legend_' + data[i].icon_name + '"></div>';
 	    item += '</div>';
 
-	    $("#legend").append(item);
+	    $("#legend_items").append(item);
 
 	    $('input[name="' + data[i].plural_name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
 		//console.log(this); // DOM element
