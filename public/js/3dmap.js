@@ -213,11 +213,19 @@ function showLandmarks() {
 		 //console.log(coord);
 		 makeInitialTransformations(loadedMesh, coord);
 		 if (data[i].object_name == "haulitorni") {
-		     loadedMesh.position.z -= 1.4;
+		     loadedMesh.position.z -= 2.8;
 		 }
 		 else if (data[i].object_name == "finlayson") {
                      loadedMesh.position.z += 0.35;
                  }
+		 else if (data[i].object_name == "pyynikki") {
+                     loadedMesh.position.z += 4.3;
+                 }
+		 else if (data[i].object_name == "klingendahl") {
+                     loadedMesh.position.z += 0.3;
+                 }
+		 loadedMesh.info = [];
+                 loadedMesh.info.push(data[i].long_name + ", korkeus: " + data[i].height + " metriä");
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
 		 allObjects.push(loadedMesh);
@@ -282,17 +290,17 @@ function showTampereOpenData() {
 function showOSMData() {
  
     return loadOBJMTLModel("/3d/icons/icon_pharmacy")
-    .then(function (model) { return getOSMData(model, "amenity%3Dpharmacy", pharmacies) })
+    .then(function (model) { return getOSMData(model, "amenity%3Dpharmacy", pharmacies, "Apteekki") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_cafe") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dcafe", cafees) })
+    .then(function (model) { return getOSMData(model, "amenity%3Dcafe", cafees, "Kahvila") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_shop")})
-    .then(function (model) { return getOSMData(model, "shop%3Dsupermarket", shops) })
+    .then(function (model) { return getOSMData(model, "shop%3Dsupermarket", shops, "Ruokakauppa") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_letter") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dpost_box", mail_boxes) })
+    .then(function (model) { return getOSMData(model, "amenity%3Dpost_box", mail_boxes, "Postilaatikko") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_post_office") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dpost_office", post_offices) })
+    .then(function (model) { return getOSMData(model, "amenity%3Dpost_office", post_offices, "Posti") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_bank") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks) })
+    .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks, "Pankki") })
 }
 
 
@@ -341,6 +349,8 @@ function showBusses() {
 		    makeInitialTransformations(mesh, coord);
 		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
+		    mesh.info = [];
+                    mesh.info.push("Bussi, linja " + journeys[i].MonitoredVehicleJourney.LineRef.value + ", suunta: " + journeys[i].MonitoredVehicleJourney.OriginName.value + " &#x21d2; " + journeys[i].MonitoredVehicleJourney.DestinationName.value);
 		    busses.push(mesh);
 		    pivotPoint.add(mesh);
 		    allObjects.push(mesh);
@@ -506,7 +516,18 @@ function getVenuesData(data, i) {
 			    makeInitialTransformations(mesh, coord);
 			    mesh.position.z += height * 3;
 			    mesh.info = [];
-			    mesh.info.push(result.venue.name);
+			    var lower = result.venue.name.toLowerCase();
+			    var parts = lower.split(" ");
+			    var name = "";
+			    for (var p = 0; p < parts.length; p++) {
+				name += parts[p].charAt(0).toUpperCase();
+				if (parts[p].length > 1) {
+				    name += parts[p].slice(1);
+				}
+				name += " ";
+			    }
+			    name = name.substring(0, name.length - 1);
+			    mesh.info.push(name);
 			    pivotPoint.add(mesh);
 			    clefs.push(mesh);
 			    allObjects.push(mesh);
@@ -545,7 +566,8 @@ function modifyPlaneGeometryHeight(data) {
     //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
     var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
     var material = new THREE.MeshPhongMaterial({
-	map: texture
+	map: texture,
+	side: THREE.DoubleSide
     });
     
     //console.log(geometry.vertices.length);
@@ -770,11 +792,11 @@ function onClick(event) {
 	var intersects = raycaster.intersectObjects(allObjects, true);
 
 	for (var i = 0; i < intersects.length; i++) {
-            //console.log(intersects[0]);
+            console.log(intersects[0]);
 	    //console.log(intersects[0].object.venue.name);
 
-            intersects[i].object.material.transparent = true;
-            intersects[i].object.material.opacity = 0.1;
+            //intersects[i].object.material.transparent = true;
+            //intersects[i].object.material.opacity = 0.1;
 	}
     }
 }
@@ -784,14 +806,46 @@ $( window ).click(onClick);
 $( window ).mousemove(function(event) {
      var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY) / renderer.domElement.height ) * 2 + 1);
 
-        var raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera( mouse, camera );
+    var raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera( mouse, camera );
+    
+    var intersects = raycaster.intersectObjects(allObjects, true);
+    
+    var allInfo = [];
 
-        var intersects = raycaster.intersectObjects(visit_tre_objects, false);
-
-        for (var i = 0; i < intersects.length; i++) {
-	    console.log(intersects[i].object.info);
+    for (var i = 0; i < intersects.length; i++) {
+	//console.log(intersects[i].object.info);
+	
+	var object = intersects[i].object;
+	
+	while (object.info == undefined && object.parent != null) {
+	    object = object.parent;
 	}
+	var exists = false;
+	for (var j = 0; j < allInfo.length; j++) {
+	    if (allInfo[j] == object.info) {
+		exists = true;
+		break;
+	    }
+	}
+	if (!exists) {
+	    allInfo.push(object.info);
+	}
+    }
+
+    //
+    // Show info of the object(s) to the user
+    //
+
+    var content = "";
+
+    for (var i = 0; i < allInfo.length; i++) {
+	content += allInfo[i][0];
+    }
+
+    $("#object_info").empty();
+    $("#object_info").append("<span>" + content + "</span>");
+    
 });
 
 function getTampereOpenData(loadedMesh, name, objects) {
@@ -805,6 +859,8 @@ function getTampereOpenData(loadedMesh, name, objects) {
             coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
             //console.log(coord);
 	    makeInitialTransformations(mesh, coord);
+	    mesh.info = [];
+            mesh.info.push(data.features[i].properties.NIMI);
             tampereObjects.push(mesh);
 	    objects.push(mesh);
 	    allObjects.push(mesh);
@@ -818,7 +874,7 @@ function getTampereOpenData(loadedMesh, name, objects) {
     return deferred.promise;
 }
 
-function getOSMData(loadedMesh, filter, objects) {
+function getOSMData(loadedMesh, filter, objects, general_name) {
     var deferred = Q.defer();
 
     $.getJSON("http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5B" + filter + "%5D%3B%0Aout%3B", function(data) {
@@ -829,6 +885,8 @@ function getOSMData(loadedMesh, filter, objects) {
             coord = projection([data.elements[i].lon, data.elements[i].lat]);
             //console.log(coord);
 	    makeInitialTransformations(mesh, coord);
+	    mesh.info = [];
+            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
 	    tampereObjects.push(mesh);
 	    objects.push(mesh);
 	    allObjects.push(mesh);
