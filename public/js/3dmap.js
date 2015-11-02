@@ -898,7 +898,7 @@ function getOSMDataWithURLForNodes(loadedMesh, api_url, objects, general_name) {
             //console.log(coord);
             makeInitialTransformations(mesh, coord);
             mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
+            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa tietoa");
             tampereObjects.push(mesh);
             objects.push(mesh);
             allObjects.push(mesh);
@@ -1062,7 +1062,8 @@ function createLegend() {
 
 	    item = '<div class="legend_list_item">';
 	    item += '<div class="legend_name_column">' + data[i].legend + '</div>';
-	    item += '<div class="legend_item_column"><input type="checkbox" name="' +  data[i].plural_name + '" checked data-on-text="Näytä" data-off-text="Piilota" id="cb_legend_' + data[i].icon_name + '"></div>';
+	    item += '<div class="legend_item_column">';
+	    item += '<input type="checkbox" name="' +  data[i].plural_name + '" checked data-on-text="Näytä" data-off-text="Piilota" id="cb_legend_' + data[i].icon_name + '"></div>';
 	    item += '</div>';
 
 	    $("#legend_items").append(item);

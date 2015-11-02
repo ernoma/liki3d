@@ -1,0 +1,24 @@
+must:
+-about-sivu ja siihen liittyvät mahd. muut sivut
+-tietojen näyttö kohteista, myös duplikaattisijainneista
+-hiiren kursorin käyttö ja controls-aputeksi alkuun
+-esitys?
+
+kivoja:
+-liikennenvalot
+-loading progress paremmaksi
+-teosto-data omalle palvelimelle
+-bussien kääntö pinnan muotojen mukaan
+-visittampere-visualisointi tauluina boxin sijaan
+-minimointi legendalle ja lataus-diville
+-eng/fi
+-ei päällekkäisiä, leijuvia, maan sisään meneviä, yms. objekteja
+
+joskus:
+-osm-datojen haku yhdellä haulla
+-bussien parempi bearing
+-basemapin valinta
+-osm-tietojen päivtykset
+-koodin siistintä
+-lataa halutut asiat manuaalisesti
+-settings ja settingsien tallennus localstorageen
