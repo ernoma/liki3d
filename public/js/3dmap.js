@@ -34,14 +34,28 @@ var banks = [];
 var mail_boxes = [];
 var post_offices = [];
 var swimming_halls = [];
+var traffic_lights = [];
 
 var visit_tre_locations = [];
 var teosto_locations = [];
 
+// Traffic light materials
+var blackLightMaterial = new THREE.MeshBasicMaterial({color: 0x333333, emissive: 0x000000});
+var redLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFF0000});
+var amberLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFFDF00});
+var greenLightMaterial = new THREE.MeshLambertMaterial({emissive: 0x00FF00});
+
+var traffic_light_meta = undefined;
+
 var clefGeometry = undefined;
+var clefMaterial = new THREE.MeshPhongMaterial({color: 0xffd700, specular: 0xffffff, shininess: 160, metal: true});
+
+var visitTreMesh = undefined;
+
 var busMesh = undefined;
 
 var busUpdateIntervalID = undefined;
+var trafficLightIntervalID = undefined;
 
 var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
 
@@ -235,6 +249,7 @@ function showLandmarks() {
 
 		 if (landmarks.length == data.length) {
 		     $("#landmark_info").text('Ladataan maamerkkejä... valmis.');
+		     //setupTrafficLights();
 		     showExternalData();
 		 }
 		 //scene.add(loadedMesh);
@@ -253,13 +268,14 @@ function showExternalData() {
 	.then(function (model) {
 	    busMesh = model;
 	    busUpdateIntervalID = setInterval(showBusses, 1000);
+	    setupTrafficLights();
 	    return loadSTLModel("clef");
 	})
 	.then(function (model) {
 	    model.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	    clefGeometry = model;
 	    showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
-	    showVisitTampereLocations('http://visittampere.fi/api/search', 0);
+	    showVisitTampereLocations();
 	})
     	.then(function (result) { return showOSMData();})
 	.then(function () {
@@ -310,6 +326,257 @@ function showOSMData() {
     .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks, "Pankki") });
 }
 
+function setupTrafficLights() {
+
+    var poleGeom = new THREE.CylinderGeometry(8, 8, 500);
+    var upPartGeom = new THREE.BoxGeometry(60, 160, 20);
+    var lightGeom = new THREE.CylinderGeometry(20, 20, 2, 12);
+
+    var poleMaterial = new THREE.MeshLambertMaterial({color: 0x848484});
+    var upPartMaterial = new THREE.MeshLambertMaterial({color: 0x2E2E2E});
+
+    var trafficLightMesh = new THREE.Mesh(poleGeom, poleMaterial);
+
+    var upPartMesh = new THREE.Mesh(upPartGeom, upPartMaterial);
+    upPartMesh.position.y = 170;
+    upPartMesh.position.z = 16;
+    trafficLightMesh.add(upPartMesh);
+
+    var topLightMesh = new THREE.Mesh(lightGeom, redLightMaterial);
+    topLightMesh.name = "red";
+    topLightMesh.rotation.x = 0.5 * Math.PI;
+    topLightMesh.position.y = 50;
+    topLightMesh.position.z = 11;
+    upPartMesh.add(topLightMesh);
+
+    var middleLightMesh = new THREE.Mesh(lightGeom, amberLightMaterial);
+    middleLightMesh.name = "amber";
+    middleLightMesh.rotation.x = 0.5 * Math.PI;
+    middleLightMesh.position.y = 0;
+    middleLightMesh.position.z = 11;
+    upPartMesh.add(middleLightMesh);
+
+    var bottomLightMesh = new THREE.Mesh(lightGeom, greenLightMaterial);
+    bottomLightMesh.name = "green";
+    bottomLightMesh.rotation.x = 0.5 * Math.PI;
+    bottomLightMesh.position.y = -50;
+    bottomLightMesh.position.z = 11;
+    upPartMesh.add(bottomLightMesh);
+
+    trafficLightMesh.scale.set(0.004, 0.004, 0.004);
+
+    //console.log(trafficLightMesh);
+
+    var pedestrianUpPartGeom = new THREE.BoxGeometry(60, 100, 20);
+    var pedestrianLightMesh = new THREE.Mesh(poleGeom, poleMaterial);
+    var pedestrianUpPartMesh = new THREE.Mesh(pedestrianUpPartGeom, upPartMaterial);
+    pedestrianUpPartMesh.position.y = 200;
+    pedestrianUpPartMesh.position.z = 16
+    pedestrianLightMesh.add(pedestrianUpPartMesh);
+    var pedestrianTopLightMesh = new THREE.Mesh(lightGeom, redLightMaterial);
+    pedestrianTopLightMesh.name = "red";
+    pedestrianTopLightMesh.rotation.x = 0.5 * Math.PI;
+    pedestrianTopLightMesh.position.y = 25;
+    pedestrianTopLightMesh.position.z = 11;
+    pedestrianUpPartMesh.add(pedestrianTopLightMesh);
+    var pedestrianBottomLightMesh = new THREE.Mesh(lightGeom, greenLightMaterial);
+    pedestrianBottomLightMesh.name = "green";
+    pedestrianBottomLightMesh.rotation.x = 0.5 * Math.PI;
+    pedestrianBottomLightMesh.position.y = -25;
+    pedestrianBottomLightMesh.position.z = 11;
+    pedestrianUpPartMesh.add(pedestrianBottomLightMesh);
+    pedestrianLightMesh.scale.set(0.004, 0.004, 0.004);
+
+    //scene.add(pedestrianLightMesh);
+
+    placeTrafficLights(trafficLightMesh, pedestrianLightMesh);
+}
+
+function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
+    d3.csv("data/traffic_lights.csv", function(data) {
+	//console.log(data);
+	
+	for (var i = 0; i < data.length; i++) {
+	    coord = projection([data[i].lng, data[i].lat]);
+            console.log(coord);
+	    
+	    var mesh = undefined;
+	    if (data[i].light_name.charAt(0) == '_') {
+		mesh = pedestrianLightMesh.clone();
+	    }
+	    else {
+		mesh = trafficLightMesh.clone();
+	    }
+
+	    var rot = Math.PI / 180 * data[i].angle;
+	    mesh.rotation.y = Math.PI - rot;
+	    //mesh.rotation.y = 0.5 * Math.PI;
+	    //mesh.rotation.z = -0.5 * Math.PI;
+	    //mesh.rotation.x = 1.5 * Math.PI;
+            makeInitialTransformations(mesh, coord);
+	    mesh.position.z += 1.2;
+	    mesh.name = data[i].light_name;
+	    
+	    mesh.info = [];
+	    mesh.info.push(data[i].light_name.charAt(0) == '_' ? "Jalankulkijan liikennevalo" : "Liikennevalo");
+	    pivotPoint.add(mesh);
+	    traffic_lights.push(mesh);
+	    allObjects.push(mesh);
+	}
+
+	updateTrafficLightsMeta();
+    });
+}
+
+function updateTrafficLightsMeta() {
+    var URL = 'http://data.itsfactory.fi/trafficlights/meta/tampere';
+    
+    $.getJSON(URL, function (data) {
+	console.log(data);
+	
+	traffic_light_meta = data.Meta[0].signals;
+
+	if (trafficLightIntervalID == undefined) {
+	    trafficLightIntervalID = setInterval(updateTrafficLights, 1000);
+	    setInterval(updateTrafficLightsMeta, 604800000);
+	}
+    });
+}
+
+function updateTrafficLights() {
+    var URL = 'http://data.itsfactory.fi/trafficlights/data/tampere';
+
+    $.getJSON(URL, function (data) {
+	//console.log(data);
+
+	var trafficLightStates = data.Data[0].rows[0].signalStates;
+
+	for (var i = 0; i < traffic_lights.length; i++) {
+	    var light_meshes = traffic_lights[i].children[0].children;
+
+	    for (var j = 0; j < traffic_light_meta.length; j++) {
+		if((traffic_lights[i].name.charAt(0) != '_' && traffic_lights[i].name.charAt(0) == traffic_light_meta[j].name) || 
+		   (traffic_lights[i].name.charAt(0) == '_' && traffic_lights[i].name.charAt(1) == traffic_light_meta[j].name.charAt(1))) {
+		    
+		    var state = data.Data[0].rows[0].signalStates.charAt(traffic_light_meta[j].index);
+		    
+		    switch(state) {
+		    case '0': // red and amber
+			for (var k = 0; k < light_meshes.length; k++) {
+			    if (light_meshes[k].name == "red") {
+				light_meshes[k].material = redLightMaterial;
+			    }
+			    else if (light_meshes[k].name == "amber") {
+                                light_meshes[k].material = amberLightMaterial;
+                            }
+			    else {
+				light_meshes[k].material = blackLightMaterial;
+                            }
+			}
+			break;
+		    case '1':
+		    case '3':
+		    case '4':
+		    case '5':
+		    case '6':
+		    case '7':
+		    case '8':
+		    case 'H': // green
+			for (var k = 0; k < light_meshes.length; k++) {
+                            if (light_meshes[k].name == "red") {
+				light_meshes[k].material = blackLightMaterial;
+                            }
+                            else if (light_meshes[k].name == "amber") {
+				light_meshes[k].material = blackLightMaterial;
+                            }
+                            else {
+                                light_meshes[k].material = greenLightMaterial;
+                            }
+                        }
+			break;
+		    case ':': // blinking green
+			for (var k = 0; k < light_meshes.length; k++) {
+                            if (light_meshes[k].name == "red") {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                            else if (light_meshes[k].name == "amber") {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                            else {
+				if (light_meshes[k].material == greenLightMaterial) {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else {
+                                    light_meshes[k].material = greenLightMaterial;
+				}
+                            }
+                        }
+			break;
+		    case ';': // flashing amber
+			for (var k = 0; k < light_meshes.length; k++) {
+                            if (light_meshes[k].name == "red") {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                            else if (light_meshes[k].name == "amber") {
+				if (light_meshes[k].material == amberLightMaterial) {
+                                    light_meshes[k].material = blackLightMaterial;
+				}
+				else {
+				    light_meshes[k].material = amberLightMaterial;
+				}
+                            }
+                            else {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                        }
+			break;
+		    case '<':
+		    case '=':
+		    case '>':
+		    case 'I': // amber
+			for (var k = 0; k < light_meshes.length; k++) {
+                            if (light_meshes[k].name == "red") {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                            else if (light_meshes[k].name == "amber") {
+                                light_meshes[k].material = amberLightMaterial;
+                            }
+                            else {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                        }
+                        break;
+		    case '9':
+		    case '?':
+		    case 'A':
+		    case 'B':
+		    case 'C':
+		    case 'D':
+		    case 'E':
+		    case 'F':
+		    case 'G':
+		    case 'J': // red
+			for (var k = 0; k < light_meshes.length; k++) {
+                            if (light_meshes[k].name == "red") {
+                                light_meshes[k].material = redLightMaterial;
+                            }
+                            else if (light_meshes[k].name == "amber") {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                            else {
+                                light_meshes[k].material = blackLightMaterial;
+                            }
+                        }
+			break;
+		    default:
+			//nothing to do, state undefined
+		    }
+		    break;
+		}
+	    }
+        }
+    });
+}
 
 function showBusses() {
     var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
@@ -370,8 +637,15 @@ function showBusses() {
     //clearInterval(busUpdateIntervalID);
 }
 
-function showVisitTampereLocations(URL, offset) {
+function showVisitTampereLocations() {
+    var textureName = ["Rock_rauta_rakkaus_1024x1024.png"];
+    var visitTreGeometry = new THREE.BoxGeometry(0.2, 5, 5);
+    visitTreMesh = createMesh(visitTreGeometry, textureName);
+    getVisitTampereLocations('http://visittampere.fi/api/search', 0);
+}
 
+function getVisitTampereLocations(URL, offset) {
+   
     var params = {
 	type: 'location',
 	limit: 50,
@@ -412,8 +686,6 @@ function showVisitTampereLocations(URL, offset) {
 			      return function(result) {
 				  //console.log(result);
 
-				  var textureNames = ["Rock_rauta_rakkaus_1024x1024.png"];
-
 				  if (result.status == "OK") {
 				      for (var j = 0; j < result.results.length; j++) {
 					  for (var k = 0; k < result.results[j].address_components.length; k++) {
@@ -441,13 +713,10 @@ function showVisitTampereLocations(URL, offset) {
 							  var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 							  
 							  if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-              						      // show cube
-							      var dim = 5;
-							      var boxGeometry = new THREE.BoxGeometry(dim, dim, dim);
-							      var mesh = createMesh(boxGeometry, textureNames[Math.floor((Math.random() * 1))]);
+							      var mesh = visitTreMesh.clone();
 							      
 							      makeInitialTransformations(mesh, coord);
-							      mesh.position.z += dim / 2 * 1.2;
+							      mesh.position.z += 2.5 * 1.2;
 							      mesh.info = [];
 							      mesh.info.push(data[i].title);
 							      visit_tre_objects.push(mesh);
@@ -468,7 +737,7 @@ function showVisitTampereLocations(URL, offset) {
 	}
 
 	if (data.length >= 50) {
-	    showVisitTampereLocations(URL, offset + 50);
+	    getVisitTampereLocations(URL, offset + 50);
 	}
     });
 }
@@ -508,8 +777,7 @@ function getVenuesData(data, i) {
 
 			var height = 3.7648086547851562 * 0.4;
 		    
-			var mat = new THREE.MeshPhongMaterial({color: 0xffd700, specular: 0xffffff, shininess: 160, metal: true});
-			var mesh = new THREE.Mesh(clefGeometry, mat);
+			var mesh = new THREE.Mesh(clefGeometry, clefMaterial);
 			mesh.venue = result.venue;
 			mesh.scale.set(2, 2, 2);
 

@@ -71,7 +71,7 @@ body {
     position: absolute;
     top: 70px;
     right: 20px;
-    width: 230px;
+    width: 300px;
     height: 460px;
     opacity: 0.9;
     background-color: #ffffff;
@@ -105,14 +105,14 @@ body {
 
 .legend_name_column {
     display: inline-block;
-    width: 50%;
+    width: 80%;
     height: 27px;
     line-height: 27px;
 }
 
 .legend_item_column {
     display: inline-block;
-    width: 50%;
+    width: 20%;
     height: 27px;
     padding-top: 10px;
 }
