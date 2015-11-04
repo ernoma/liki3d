@@ -31,6 +31,7 @@ var cafees = [];
 var shops = [];
 var libraries = [];
 var banks = [];
+var restaurants = [];
 var mail_boxes = [];
 var post_offices = [];
 var swimming_halls = [];
@@ -318,6 +319,8 @@ function showOSMData() {
     .then(function (model) {
 	return getOSMDataForShops(model);
     })
+    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_restaurant") })
+    .then(function (model) { return getOSMData(model, "amenity%3Drestaurant", restaurants, "Ravintola") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_letter") })
     .then(function (model) { return getOSMData(model, "amenity%3Dpost_box", mail_boxes, "Postilaatikko") })
     .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_post_office") })
@@ -1293,8 +1296,8 @@ function createMinimizeEventHandlers() {
 	}
 	else {
 	    $('#legend_items').show();
-            $('#legend').css('height', 460);
-	    $('#legend').css('width', 230);
+            $('#legend').css('height', 490);
+	    $('#legend').css('width', 300);
             $('#legend_min_img').attr('src', "/images/arrow_carrot-down.png");
 	}
     });
