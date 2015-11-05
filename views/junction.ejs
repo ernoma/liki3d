@@ -10,10 +10,24 @@
     <div id="webgl">
       <div id="object_info">
       </div>
-      <div id="legend">
-	<div id="legend_title">Kartan sisältö</div>
+      <div id="legend_junction">
+	<div id="legend_junction_title">Kartan sisältö</div>
 	<div id="legend_min"><a id="legend_min_href" href="#minimize"><img width="15" height="15" id="legend_min_img" src="/images/arrow_carrot-down.png"></a></div>
-	<div id="legend_items"></div>
+	<div id="legend_junction_content">
+	  <p>
+	  Kartalla 15 liikennevaloa, joista:
+	  <ul>
+	    <li>8 ajoneuvojen liikennevaloa
+	    <li>7 jalankulkijoiden liikennevaloa
+	  </ul>
+	  </p>
+
+	  <p>Liikennevalojen tila päivitetään kerran sekunnissa ITS Factoryn avoimen datan perusteella. Liikennevalotietoja olisi tarjolla myös Oulun Professorintien/Kajaanintien risteyksestä.</p>
+
+	  <p>Liikennevalojen tilan lisäksi saatavilla olisi liikennetunnistimien dataa.<p>
+
+	  <p><a href="http://data.itsfactory.fi/files/trafficlights/" target="_blank">Lisätietoa</a> ITS Factoryn sivuilla.</p>
+	</div>
       </div>
     </div>
 
@@ -37,35 +51,17 @@
   <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="/vendor/bootstrap-switch/bootstrap-switch.min.js"></script>
-  <!--<script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>-->
-  <!--<script type="text/javascript" src="/vendor/Leaflet.awesome-markers/leaflet.awesome-markers.min.js"></script>-->
   <script type="text/javascript" src="/vendor/spin.min.js"></script>
   <script type="text/javascript" src="/vendor/threejs/three.min.js"></script>
   <script type="text/javascript" src="/vendor/d3/d3.min.js"></script>
   <script type="text/javascript" src="/vendor/threejs/TrackballControls.js"></script>
   <script type="text/javascript" src="/vendor/stats.js"></script>
   <script type="text/javascript" src="/vendor/dat.gui.js"></script>
-  <script type="text/javascript" src="/vendor/q-1.4.1/q.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/TerrainLoader.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/STLLoader.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/OBJLoader.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/MTLLoader.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/OBJMTLLoader.js"></script>
-  <!--<script type="text/javascript" src="/vendor/threejs/Projector.js"></script>-->
-  <!--<script type="text/javascript" src="/vendor/threejs/physijs/physi.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/physijs/physijs_worker.js"></script>-->
-  <!--<script type="text/javascript" src="/fonts/droid/droid_sans_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_sans_mono_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_sans_bold.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_serif_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_serif_bold.typeface.js"></script>-->
-  <!--<script type="text/javascript" src="/fonts/Symbola_regular.typeface.js"></script>-->
   <script type="text/javascript">
     $(document).ready(function() {
-    $('#explore').addClass("active");
+    $('#junction').addClass("active");
     });
   </script>
-  <!--<script type="text/javascript" src="/js/api_keys.js"></script>-->
   <script type="text/javascript" src="/js/junction.js"></script>
 </body>
 </html>

@@ -1296,7 +1296,7 @@ function createMinimizeEventHandlers() {
 	}
 	else {
 	    $('#legend_items').show();
-            $('#legend').css('height', 490);
+            $('#legend').css('height', 500);
 	    $('#legend').css('width', 300);
             $('#legend_min_img').attr('src', "/images/arrow_carrot-down.png");
 	}

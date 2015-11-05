@@ -15,30 +15,12 @@ var origTerrainWidth = 20;
 var origTerrainHeight = 20;
 
 var projection = undefined;
-var heightMap = undefined;
 
 var gameBoard = undefined;
 var pivotPoint = undefined;
 
 var allObjects = [];
-var tampereObjects = [];
-var visit_tre_objects = [];
-var clefs = [];
-var busses = [];
-var landmarks = [];
-var pharmacies = [];
-var cafees = [];
-var shops = [];
-var libraries = [];
-var banks = [];
-var restaurants = [];
-var mail_boxes = [];
-var post_offices = [];
-var swimming_halls = [];
 var traffic_lights = [];
-
-var visit_tre_locations = [];
-var teosto_locations = [];
 
 // Traffic light materials
 var blackLightMaterial = new THREE.MeshBasicMaterial({color: 0x333333, emissive: 0x000000});
@@ -48,23 +30,10 @@ var greenLightMaterial = new THREE.MeshLambertMaterial({emissive: 0x00FF00});
 
 var traffic_light_meta = undefined;
 
-var clefGeometry = undefined;
-var clefMaterial = new THREE.MeshPhongMaterial({color: 0xffd700, specular: 0xffffff, shininess: 160, metal: true});
-
-var visitTreMesh = undefined;
-
-var busMesh = undefined;
-
-var busUpdateIntervalID = undefined;
 var trafficLightIntervalID = undefined;
-
-var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
-
-var overpass_server = "http://overpass.osm.rambler.ru/cgi/interpreter"; // http://overpass-api.de/api/interpreter
 
 $(document).ready( function() {
 
-    createLegend();
     createMinimizeEventHandlers();
 
     var opts = {
@@ -89,19 +58,12 @@ $(document).ready( function() {
     var spinner = new Spinner(opts).spin(target);
     $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
-    //Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
-    //Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
-
     stats = initStats();
 
-    //console.log(places);
-
-    //scene = new Physijs.Scene;
-    //scene.setGravity(new THREE.Vector3(0, -1000, 0));
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
-    camera.position.set(0, 300, 600);
+    camera.position.set(30, 150, 200);
     camera.lookAt(scene.position);
 
     renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -114,15 +76,10 @@ $(document).ready( function() {
     controls = new THREE.TrackballControls(camera, renderer.domElement);
 
     projection = d3.geo.mercator()
-	.translate([(terrainWidth + 5) / 2, (terrainHeight + 272) / 2])
-	.scale(121500)
+	.translate([(terrainWidth) / 2, (terrainHeight) / 2])
+	.scale(5715000)
 	.rotate([-27, 0, 0])
-	.center([23.77570164 - 27, 61.47114807]); // mercator: 8734817,5 - x, 2646699;
-
-    heightMap = new Array(origTerrainHeight);
-    for (var i = 0; i < origTerrainHeight; i++) {
-	heightMap[i] = new Array(origTerrainWidth);
-    }
+	.center([23.7510681152 - 27, 61.5004237519]); // mercator: 8734817,5 - x, 2646699;
 
     pivotPoint = new THREE.Object3D();
     scene.add(pivotPoint);
@@ -145,7 +102,7 @@ function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg', undefined, function() {
 	$("#bg_info").text('Ladataan taustakuva... valmis.');
 	$("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
-	showTerrain();
+	showMap();
     });
     texture.minFilter = THREE.LinearFilter;
     var backgroundMesh = new THREE.Mesh(
@@ -163,31 +120,34 @@ function setupBackground() {
     backgroundScene.add(backgroundMesh);
 }
 
-function showTerrain() {
-    var terrainLoader = new THREE.TerrainLoader();
-    $("#loading_text").append('<br><span id="height_info">Ladataan kartan korkeustietoja...</span>');
-    terrainLoader.load('/data/tampere_height.bin', function(data) {
-	//console.log(data);
+function showMap() {
 
-    /*var data = [];
-    for (var i = 0; i < origTerrainHeight; i++) {
-	for (var j = 0; j < origTerrainWidth; j++) {
-	    heightMap[i][j] = 0;
-	}
-    }*/
-	modifyPlaneGeometryHeight(data);
-        
-	$("#loading_text").append('<br><span id="landmark_info">Ladataan maamerkkejä...</span>');
-	showLandmarks();
+    var URL = '/images/mmlorto_tampere_junction.jpg';
+    //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
 
-	$("#height_info").text('Ladataan kartan korkeustietoja... valmis.');
-
-    }, function(event) {
-	console.log(event);
-    }, function (event) {
-	console.log(event);
+    var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
+	$("#terrain_info").text('Ladataan karttaa... valmis.');
     });
-}
+    //console.log(texture);
+    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
+    var geometry = new THREE.PlaneGeometry(768, 512, origTerrainWidth - 1, origTerrainHeight - 1);
+    var material = new THREE.MeshPhongMaterial({
+	map: texture,
+	side: THREE.DoubleSide
+    });
+    
+    var ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+
+    gameBoard = ground;
+    scene.add(gameBoard);
+
+    showExternalData();
+
+    render();
+}    
+
+
 
 function addLights() {
     scene.add(new THREE.AmbientLight(0xbbbbbb));
@@ -215,56 +175,17 @@ function addLights() {
     $("#light_info").text('Laitetaan valot päälle... valmis.');
 }
 
-function showLandmarks() {
-    d3.csv("data/landmarks.csv", function(data) {
-        //console.log(data);
-
-	var loader = new THREE.OBJMTLLoader();
-
-        for (var i = 0; i < data.length; i++) {
-        
-	    (function(data, i)
-	     { loader.load("/3d/" + data[i].object_name + ".obj", "/3d/" + data[i].object_name + ".mtl", function(loadedMesh) {
-		 //console.log(loadedMesh);
-		 loadedMesh.scale.set(0.12, 0.12, 0.12);
-		 coord = projection([data[i].lng, data[i].lat]);
-		 //console.log(coord);
-		 makeInitialTransformations(loadedMesh, coord);
-		 if (data[i].object_name == "haulitorni") {
-		     loadedMesh.position.z -= 2.8;
-		 }
-		 else if (data[i].object_name == "finlayson") {
-                     loadedMesh.position.z += 0.35;
-                 }
-		 else if (data[i].object_name == "pyynikki") {
-                     loadedMesh.position.z += 4.3;
-                 }
-		 else if (data[i].object_name == "klingendahl") {
-                     loadedMesh.position.z += 0.3;
-                 }
-		 loadedMesh.info = [];
-                 loadedMesh.info.push(data[i].long_name + ", korkeus: " + data[i].height + " metriä");
-		 landmarks.push(loadedMesh);
-		 pivotPoint.add(loadedMesh);
-		 allObjects.push(loadedMesh);
-
-		 if (landmarks.length == data.length) {
-		     $("#landmark_info").text('Ladataan maamerkkejä... valmis.');
-		     //setupTrafficLights();
-		     showExternalData();
-		 }
-		 //scene.add(loadedMesh);
-	     });
-	     })(data, i);
-	}
-    });
-}
-
 function showExternalData() {
     
-    $("#loading_text").append('<br><span id="external_data_info">Ladataan pienoismalleja...</span>');
+    $("#loading_text").append('<br><span id="external_data_info">Ladataan liikennevaloja...</span>');
 
-    showTampereOpenData()
+    setupTrafficLights();
+
+    setTimeout(function () {
+	$('#loading').hide();
+    }, 1000);
+
+    /*showTampereOpenData()
 	.then(function (result) { return loadOBJMTLModel("/3d/bussi")})
 	.then(function (model) {
 	    busMesh = model;
@@ -288,46 +209,9 @@ function showExternalData() {
 	    console.log("progress: ", event);
 	    // TODO notify user
 	})
-	.done();
+	.done();*/
 }
 
-function showTampereOpenData() {
-     var promise = loadOBJMTLModel("/3d/icons/icon_swimming")
-	.then(function (model) { 
-	    //console.log("model", model);
-	    return getTampereOpenData(model, "UIMAHALLIT", swimming_halls);
-	})
-	.then(function (result) {
-	    //console.log("going to read library");
-	    return loadOBJMTLModel("/3d/icons/icon_library");
-	})
-	.then(function (model) {
-	    //console.log("model", model);
-	    return getTampereOpenData(model, "KIRJASTOT", libraries);
-	});
-    
-    return promise;
-}
-
-function showOSMData() {
- 
-    return loadOBJMTLModel("/3d/icons/icon_pharmacy")
-    .then(function (model) { return getOSMData(model, "amenity%3Dpharmacy", pharmacies, "Apteekki") })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_cafe") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dcafe", cafees, "Kahvila") })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_shop")})
-    .then(function (model) {
-	return getOSMDataForShops(model);
-    })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_restaurant") })
-    .then(function (model) { return getOSMData(model, "amenity%3Drestaurant", restaurants, "Ravintola") })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_letter") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dpost_box", mail_boxes, "Postilaatikko") })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_post_office") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dpost_office", post_offices, "Posti") })
-    .then(function(result) { return loadOBJMTLModel("/3d/icons/icon_bank") })
-    .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks, "Pankki") });
-}
 
 function setupTrafficLights() {
 
@@ -366,7 +250,7 @@ function setupTrafficLights() {
     bottomLightMesh.position.z = 11;
     upPartMesh.add(bottomLightMesh);
 
-    trafficLightMesh.scale.set(0.004, 0.004, 0.004);
+    trafficLightMesh.scale.set(0.04, 0.04, 0.04);
 
     //console.log(trafficLightMesh);
 
@@ -388,7 +272,7 @@ function setupTrafficLights() {
     pedestrianBottomLightMesh.position.y = -25;
     pedestrianBottomLightMesh.position.z = 11;
     pedestrianUpPartMesh.add(pedestrianBottomLightMesh);
-    pedestrianLightMesh.scale.set(0.004, 0.004, 0.004);
+    pedestrianLightMesh.scale.set(0.04, 0.04, 0.04);
 
     //scene.add(pedestrianLightMesh);
 
@@ -421,7 +305,8 @@ function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
 	    mesh.name = data[i].light_name;
 	    
 	    mesh.info = [];
-	    mesh.info.push(data[i].light_name.charAt(0) == '_' ? "Jalankulkijan liikennevalo" : "Liikennevalo");
+	    var text = data[i].light_name.charAt(0) == '_' ? "Jalankulkijan liikennevalo" : "Liikennevalo";
+	    mesh.info.push(text + ": " + data[i].light_name);
 	    pivotPoint.add(mesh);
 	    traffic_lights.push(mesh);
 	    allObjects.push(mesh);
@@ -581,305 +466,10 @@ function updateTrafficLights() {
     });
 }
 
-function showBusses() {
-    var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
-    
-    $.getJSON(URL, function (data) {
-        //console.log(data);
-
-	var journeys = data.Siri.ServiceDelivery.VehicleMonitoringDelivery[0].VehicleActivity;
-	//console.log(journeys);
-
-	// TODO remove journeys that do not exist anymore
-
-	for (var i = 0; i < journeys.length; i++) {
-	    var found = false;
-	    for (var j = 0; j < busses.length; j++) {
-		if (journeys[i].MonitoredVehicleJourney.VehicleRef.value == busses[j].journey.MonitoredVehicleJourney.VehicleRef.value) {
-		    found = true;
-		    // update mesh position
-		    coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
-                    var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-                    var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			makeInitialTransformations(busses[j], coord);
-			// TODO: calculate bearing from the previous location
-			busses[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
-		    }
-		    break;
-		}
-	    }
-	    if (!found) {
-		// new vehicle, add to scene
-		var mesh = busMesh.clone();//new THREE.Mesh(busGeometry, mat);
-		//console.log(mesh);
-		//var box = new THREE.Box3().setFromObject( mesh );
-		//console.log( box.min, box.max, box.size() );
-		//mesh.rotation.x = 0.5 * Math.PI;
-		//console.log(mesh);
-		var height = 0.25967699344000716;
-		coord = projection([journeys[i].MonitoredVehicleJourney.VehicleLocation.Longitude, journeys[i].MonitoredVehicleJourney.VehicleLocation.Latitude]);
-		var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-		var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-		//console.log(x, y);
-		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-		    makeInitialTransformations(mesh, coord);
-		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
-		    mesh.journey = journeys[i];
-		    mesh.info = [];
-                    mesh.info.push("Bussi, linja " + journeys[i].MonitoredVehicleJourney.LineRef.value + ", suunta: " + journeys[i].MonitoredVehicleJourney.OriginName.value + " &#x21d2; " + journeys[i].MonitoredVehicleJourney.DestinationName.value);
-		    busses.push(mesh);
-		    pivotPoint.add(mesh);
-		    allObjects.push(mesh);
-		    //scene.add(mesh);
-		}
-	    }
-	}
-    });
-
-    //clearInterval(busUpdateIntervalID);
-}
-
-function showVisitTampereLocations() {
-    var textureName = ["Rock_rauta_rakkaus_1024x1024.png"];
-    var visitTreGeometry = new THREE.BoxGeometry(0.2, 5, 5);
-    visitTreMesh = createMesh(visitTreGeometry, textureName);
-    getVisitTampereLocations('http://visittampere.fi/api/search', 0);
-}
-
-function getVisitTampereLocations(URL, offset) {
-   
-    var params = {
-	type: 'location',
-	limit: 50,
-	offset: offset,
-	lang: 'fi'
-    }
-
-    $.getJSON(URL, params, function (data) {
-	//console.log(data);
-	
-	for (var i = 0; i < data.length; i++) {
-	    var postcode = null;
-	    if (data[i].contact_info.postcode != null && $.isNumeric(data[i].contact_info.postcode)) {
-		postcode = data[i].contact_info.postcode;
-	    }
-	    var address = data[i].contact_info.address;
-	    var city = data[i].contact_info.city;
-
-	    var full_address = "";
-
-	    if (address != null) {
-		full_address += address + ", ";
-	    }
-	    if (postcode != null) {
-                full_address += postcode + ", ";
-            }
-	    if (city != null) {
-                full_address += city;
-            }
-	    
-	    if (full_address != null) {
-	
-		var addr = full_address.replace(/, /g, '%2C').replace(/ /g, '+');
-		//console.log(addr);
-		
-		$.getJSON('http://api.okf.fi/gis/1/geocode.json?address=' + addr + '&lat=&lng=&language=fin',
-			  (function(i) {
-			      return function(result) {
-				  //console.log(result);
-
-				  if (result.status == "OK") {
-				      for (var j = 0; j < result.results.length; j++) {
-					  for (var k = 0; k < result.results[j].address_components.length; k++) {
-					      if (result.results[j].address_components[k].types[0] == 'administrative_area_level_3') {
-						  if (data[i].contact_info.city != null && result.results[j].address_components[k].long_name == data[i].contact_info.city) {
-						      
-						      var found = false;
-						      
-						      for (var m = 0; m < visit_tre_locations.length; m++) {
-							  if (visit_tre_locations[m].lng == result.results[j].geometry.location.lng &&
-							      visit_tre_locations[m].lat == result.results[j].geometry.location.lat)
-							  {
-							      visit_tre_locations[m].mesh.info.push(data[i].title);
-							      //console.log("found in locations");
-							      found = true;
-							      break;
-							  }
-						      }
-					    
-						      if (!found) {
-							  var coord = projection([result.results[j].geometry.location.lng, result.results[j].geometry.location.lat]);
-							  //console.log(coord);
-							  
-							  var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-							  var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-							  
-							  if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-							      var mesh = visitTreMesh.clone();
-							      
-							      makeInitialTransformations(mesh, coord);
-							      mesh.position.z += 2.5 * 1.2;
-							      mesh.info = [];
-							      mesh.info.push(data[i].title);
-							      visit_tre_objects.push(mesh);
-							      allObjects.push(mesh);
-							      pivotPoint.add(mesh);
-							      //scene.add(mesh);
-							      visit_tre_locations.push({mesh: mesh, lng: result.results[j].geometry.location.lng, lat: result.results[j].geometry.location.lat});
-							  }
-						      } // if (!found)
-						  }
-						  //break;
-					      }
-					  }
-				      }
-				  }}
-			  }(i)));
-	    }
-	}
-
-	if (data.length >= 50) {
-	    getVisitTampereLocations(URL, offset + 50);
-	}
-    });
-}
-
-function showTeostoVenues(URL) {
-    
-    $.getJSON(URL, function (data) {
-	console.log(data);
-
-	var i = 0;
-	getVenuesData(data, i);
-    });
-}
-
-function getVenuesData(data, i) {
-
-    if (i < data.venues.length - 1) {
-	setTimeout(
-	    function() { 
-		$.getJSON(data.venues[i].url, function (result) {
-		    //console.log(result.venue);
-
-		    var found = false;
-		    
-                    for (var m = 0; m < teosto_locations.length; m++) {
-                        if (teosto_locations[m].lng == result.venue.place.geoCoordinates.longitude &&
-                            teosto_locations[m].lat == result.venue.place.geoCoordinates.latitude)
-                        {
-			    teosto_locations[m].mesh.info.push(result.venue.name);
-                            //console.log("teosto venue found in locations");
-                            found = true;
-                            break;
-                        }
-                    }
-		    
-		    if (!found) {
-
-			var height = 3.7648086547851562 * 0.4;
-		    
-			var mesh = new THREE.Mesh(clefGeometry, clefMaterial);
-			mesh.venue = result.venue;
-			mesh.scale.set(2, 2, 2);
-
-			var coord = projection([result.venue.place.geoCoordinates.longitude, result.venue.place.geoCoordinates.latitude]);
-			var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-			var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-	    
-			//console.log("x: " + x + ", y: " + y);
-
-			if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			    makeInitialTransformations(mesh, coord);
-			    mesh.position.z += height * 3;
-			    mesh.info = [];
-			    var lower = result.venue.name.toLowerCase();
-			    var parts = lower.split(" ");
-			    var name = "";
-			    for (var p = 0; p < parts.length; p++) {
-				name += parts[p].charAt(0).toUpperCase();
-				if (parts[p].length > 1) {
-				    name += parts[p].slice(1);
-				}
-				name += " ";
-			    }
-			    name = name.substring(0, name.length - 1);
-			    mesh.info.push(name);
-			    pivotPoint.add(mesh);
-			    clefs.push(mesh);
-			    allObjects.push(mesh);
-			    //scene.add(mesh);
-
-			    teosto_locations.push({mesh: mesh, lng: result.venue.place.geoCoordinates.longitude, lat: result.venue.place.geoCoordinates.latitude});
-			}
-
-		    }
-		}).done(function(data, i) {
-		    return function(result) {
-			//console.log("in done, data: " + data + ", i: ", + i);
-			getVenuesData(data, i+1);
-		    };
-		}(data, i)) // getJSON
-	    }, 100); // setTimeout
-    }
-    else if (data.response_meta.next != "undefined") {
-	showTeostoVenues(data.response_meta.next);
-    }
-}
 
 /*******************************************************************************
  * Helper functionality
  ******************************************************************************/
-
-function modifyPlaneGeometryHeight(data) {
-
-    var URL = '/images/mmlorto_tampere_junction.jpg';
-    //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
-
-    var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
-	$("#terrain_info").text('Ladataan karttaa... valmis.');
-    });
-    //console.log(texture);
-    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
-    var geometry = new THREE.PlaneGeometry(768, 512, origTerrainWidth - 1, origTerrainHeight - 1);
-    var material = new THREE.MeshPhongMaterial({
-	map: texture,
-	side: THREE.DoubleSide
-    });
-    
-    //console.log(geometry.vertices.length);
-    
-    var j = 0;
-    var k = 0;
-
-    for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	//var height = data[i] / 255 * 21;
-	var height = data[i] / 65535 * 21;
-	geometry.vertices[i].z = height;
-	heightMap[j][k] = height;
-	k++;
-	if (k == origTerrainWidth) {
-	    j++;
-	    k = 0;
-	}
-    }
-
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    //console.log(geometry);
-
-    var ground = new THREE.Mesh(geometry, material);
-    ground.rotation.x = -Math.PI / 2;
-
-    gameBoard = ground;
-    scene.add(gameBoard);
-
-    render();
-
-    console.log("done modifying z");
-}    
-
 
 function translate(point) {
   return [point[0] - (terrainWidth / 2), point[1] - (terrainHeight / 2)];
@@ -895,7 +485,7 @@ function makeInitialTransformations(mesh, coord) {
 
     //console.log(coord);
 
-    mesh.position.set(coord[0], -coord[1], heightMap[y][x]);
+    mesh.position.set(coord[0], -coord[1], 0);
     mesh.rotation.x = Math.PI / 2;
 }
 
@@ -1010,18 +600,6 @@ function createMesh(geom, imageFileName) {
 function render() {
     stats.update();
 
-    for (var i = 0; i < clefs.length; i++) {
-	clefs[i].rotation.y += 0.02;
-    }
-
-    for (var i = 0; i < tampereObjects.length; i++) {
-	tampereObjects[i].rotation.y += 0.01;
-    }
-
-    for (var i = 0; i < visit_tre_objects.length; i++) {
-	visit_tre_objects[i].rotation.y += 0.02;
-    }
-
     controls.update();
     requestAnimationFrame(render);
     
@@ -1122,184 +700,25 @@ $( window ).mousemove(function(event) {
     }
 
     $("#object_info").empty();
-    $("#object_info").append("<span>" + content + "</span>");
-    
+    $("#object_info").append("<span>" + content + "</span>");    
 });
 
-function getTampereOpenData(loadedMesh, name, objects) {
-    var deferred = Q.defer();
-
-    $.getJSON("http://opendata.navici.com/tampere/opendata/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=opendata:" + name + "&outputFormat=json&srsName=EPSG:4326", function(data) {
-	//console.log(data);
-	for (var i = 0; i < data.features.length; i++) {
-	    var mesh = loadedMesh.clone();
-            mesh.scale.set(2, 2, 2);
-            coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
-            //console.log(coord);
-	    makeInitialTransformations(mesh, coord);
-	    mesh.info = [];
-            mesh.info.push(data.features[i].properties.NIMI);
-            tampereObjects.push(mesh);
-	    objects.push(mesh);
-	    allObjects.push(mesh);
-            pivotPoint.add(mesh);
-	    //scene.add(mesh);
-	}
-
-	deferred.resolve();
-    });
-
-    return deferred.promise;
-}
-
-function getOSMDataForShops(loadedMesh) {
-    return getOSMDataWithURLForNodes(loadedMesh, overpass_server + "?data=%5Bout%3Ajson%5D%3B%0A%28%0A%20%20node%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22convenience%22%5D%3B%0A%20%20node%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22supermarket%22%5D%3B%0A%29%3B%0Aout%3B%0A", shops, "Ruokakauppa").
-	then(getOSMDataWithURLForWays(loadedMesh, overpass_server + "?data=%5Bout%3Ajson%5D%3B%0A%28%0A%20%20way%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22convenience%22%5D%3B%0A%20%20way%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22supermarket%22%5D%3B%0A%29%3B%0Aout%20center%20meta%3B%0A", shops, "Ruokakauppa"));
-}
-
-function getOSMDataWithURLForNodes(loadedMesh, api_url, objects, general_name) {
-    var deferred = Q.defer();
-
-    $.getJSON(api_url, function(data) {
-        //console.log("osm:", data);
-        for (var i = 0; i < data.elements.length; i++) {
-            var mesh = loadedMesh.clone();
-            mesh.scale.set(2, 2, 2);
-            coord = projection([data.elements[i].lon, data.elements[i].lat]);
-            //console.log(coord);
-            makeInitialTransformations(mesh, coord);
-            mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa tietoa");
-            tampereObjects.push(mesh);
-            objects.push(mesh);
-            allObjects.push(mesh);
-            pivotPoint.add(mesh);
-            //scene.add(mesh);
-        }
-
-        deferred.resolve();
-    });
-
-    return deferred.promise;
-}
-
-function getOSMDataWithURLForWays(loadedMesh, api_url, objects, general_name) {
-    var deferred = Q.defer();
-
-    $.getJSON(api_url, function(data) {
-        //console.log("osm:", data);
-        for (var i = 0; i < data.elements.length; i++) {
-            var mesh = loadedMesh.clone();
-            mesh.scale.set(2, 2, 2);
-            coord = projection([data.elements[i].center.lon, data.elements[i].center.lat]);
-            //console.log(coord);
-            makeInitialTransformations(mesh, coord);
-            mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
-            tampereObjects.push(mesh);
-            objects.push(mesh);
-            allObjects.push(mesh);
-            pivotPoint.add(mesh);
-            //scene.add(mesh);
-        }
-
-        deferred.resolve();
-    });
-
-    return deferred.promise;
-}
-
-//model, "shop%3Dsupermarket", shops, "Ruokakauppa")
-
-function getOSMData(loadedMesh, filter, objects, general_name) {
-    var deferred = Q.defer();
-
-    $.getJSON(overpass_server + "?data=%5Bout%3Ajson%5D%3Bnode(61.2740%2C23.3317%2C61.701%2C24.253)%5B" + filter + "%5D%3B%0Aout%3B", function(data) {
-	//console.log("osm:", data);
-	for (var i = 0; i < data.elements.length; i++) {
-	    var mesh = loadedMesh.clone();
-            mesh.scale.set(2, 2, 2);
-            coord = projection([data.elements[i].lon, data.elements[i].lat]);
-            //console.log(coord);
-	    makeInitialTransformations(mesh, coord);
-	    mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
-	    tampereObjects.push(mesh);
-	    objects.push(mesh);
-	    allObjects.push(mesh);
-            pivotPoint.add(mesh);
-	    //scene.add(mesh);
-	}
-
-	deferred.resolve();
-    });
-
-    return deferred.promise;
-}
-
-/*function loadTexture(path) {
-    var deferred = Q.defer();
-
-    THREE.ImageUtils.loadTexture(path, null, function (loaded) {
-	deferred.resolve(loaded);
-    }, function (error) {
-	deferred.reject(error);
-    });
-
-    return deferred.promise;
-}*/
-
-function loadSTLModel(name) {
-
-    var deferred = Q.defer();
-    
-    var loader = new THREE.STLLoader();
-
-    loader.load("/3d/" + name + ".stl", function (loaded) {
-	loaded.name = name;
-	deferred.resolve(loaded);
-    }, function (progress) {
-        deferred.notify(progress);
-    }, function (error) {
-        deferred.reject(error);
-    });
-
-    return deferred.promise;
-}
-
-function loadOBJMTLModel(path) {
-
-    var deferred = Q.defer();
-
-    var loader = new THREE.OBJMTLLoader();
-
-    loader.load(path + ".obj", path + ".mtl", function (loaded) {
-	loaded.name = path;
-	deferred.resolve(loaded);
-    }, function (progress) {
-	deferred.notify(progress);
-    }, function (error) {
-        deferred.reject(error);
-    });
-
-    return deferred.promise;
-}
 
 function createMinimizeEventHandlers() {
     $('#legend_min_href').on('click', function(event) {
-	event.preventDefault();
-	if ($('#legend_min_img').attr('src') == "/images/arrow_carrot-down.png") {
-	    $('#legend_items').hide();
-	    $('#legend').css('height', 30);
-	    $('#legend').css('width', 160);
-	    $('#legend_min_img').attr('src', "/images/arrow_carrot-up.png");
-	}
-	else {
-	    $('#legend_items').show();
-            $('#legend').css('height', 490);
-	    $('#legend').css('width', 300);
+        event.preventDefault();
+        if ($('#legend_min_img').attr('src') == "/images/arrow_carrot-down.png") {
+            $('#legend_junction_content').hide();
+            $('#legend_junction').css('height', 50);
+            $('#legend_junction').css('width', 160);
+            $('#legend_min_img').attr('src', "/images/arrow_carrot-up.png");
+        }
+        else {
+            $('#legend_junction_content').show();
+            $('#legend_junction').css('height', 300);
+            $('#legend_junction').css('width', 300);
             $('#legend_min_img').attr('src', "/images/arrow_carrot-down.png");
-	}
+        }
     });
 
     $('#loading_min_href').on('click', function(event) {
@@ -1321,46 +740,5 @@ function createMinimizeEventHandlers() {
     $('#loading_close_href').on('click', function(event) {
         event.preventDefault();
 	$('#loading').hide();
-    });
-}
-
-function createLegend() {
-    
-    d3.csv("data/legend.csv", function(data) {
-        //console.log(data);
-
-	for (var i = 0; i < data.length; i++) {
-
-	    item = '<div class="legend_list_item">';
-	    item += '<div class="legend_name_column">' + data[i].legend + '</div>';
-	    item += '<div class="legend_item_column">';
-	    item += '<input type="checkbox" name="' +  data[i].plural_name + '" checked data-on-text="Näytä" data-off-text="Piilota" id="cb_legend_' + data[i].icon_name + '"></div>';
-	    item += '</div>';
-
-	    $("#legend_items").append(item);
-
-	    $('input[name="' + data[i].plural_name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
-		//console.log(this); // DOM element
-		//console.log(event); // jQuery event
-		//console.log(state); // true | false
-
-		if (state == true) {
-		    //console.log("showing: " + this.name);
-		    var objects = window[this.name];
-		    for (var j = 0; j < objects.length; j++) {
-			objects[j].traverse(function(child){child.visible = true;});
-		    }
-		}
-		else {
-		    //console.log("hiding: " + this.name);
-		    var objects = window[this.name];
-                    for (var j = 0; j < objects.length; j++) {
-			objects[j].traverse(function(child){child.visible = false;});
-		    }
-		}
-	    });
-	    
-	    $('[name="' +  data[i].plural_name + '"]').bootstrapSwitch({size: 'mini'});
-	}
     });
 }

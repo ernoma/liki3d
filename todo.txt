@@ -5,7 +5,6 @@ must:
 -esitys?
 
 kivoja:
--liikennenvalot
 -loading progress paremmaksi
 -teosto-data omalle palvelimelle
 -bussien kääntö pinnan muotojen mukaan

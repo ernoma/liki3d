@@ -72,16 +72,36 @@ body {
     top: 70px;
     right: 20px;
     width: 300px;
-    height: 490px;
+    height: 500px;
     opacity: 0.9;
     background-color: #ffffff;
     border-radius: 8px;
     border: 1px solid #222222;
 }
 
+#legend_junction {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    width: 300px;
+    height: 300px;
+    opacity: 0.9;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #222222;
+    padding: 10px;
+}
+
 #legend_title {
     padding-top: 5px;
     text-align: center;
+}
+
+#legend_junction_title {
+    padding-top: 5px;
+    padding-bottom: 15px;
+    text-align: center;
+    font-size: large;
 }
 
 #legend_min {
