@@ -79,15 +79,10 @@ $(document).ready( function() {
     var spinner = new Spinner(opts).spin(target);
     $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
-    //Physijs.scripts.worker = '/vendor/threejs/physijs/physijs_worker.js'
-    //Physijs.scripts.ammo = '/vendor/threejs/physijs/ammo.js';
-
     stats = initStats();
 
     //console.log(places);
 
-    //scene = new Physijs.Scene;
-    //scene.setGravity(new THREE.Vector3(0, -1000, 0));
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 45, $('#webgl').innerWidth() / $('#webgl').innerHeight(), 0.1, 10000 );
@@ -159,12 +154,6 @@ function showTerrain() {
     terrainLoader.load('/data/tampere_height.bin', function(data) {
 	//console.log(data);
 
-    /*var data = [];
-    for (var i = 0; i < origTerrainHeight; i++) {
-	for (var j = 0; j < origTerrainWidth; j++) {
-	    heightMap[i][j] = 0;
-	}
-    }*/
 	modifyPlaneGeometryHeight(data);
         
 	$("#loading_text").append('<br><span id="landmark_info">Ladataan maamerkkejä...</span>');
@@ -340,7 +329,7 @@ function showBusses() {
 		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 			makeInitialTransformations(busses[j], coord);
 			// TODO: calculate bearing from the previous location
-			busses[j].rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
+			busses[j].rotation.y = Math.PI - journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    }
 		    break;
 		}
@@ -360,7 +349,7 @@ function showBusses() {
 		//console.log(x, y);
 		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 		    makeInitialTransformations(mesh, coord);
-		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
+		    mesh.rotation.y = Math.PI - journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
 		    mesh.info = [];
                     mesh.info.push("<p>Bussi - Linja " + journeys[i].MonitoredVehicleJourney.LineRef.value + "</p><p>Suunta: " + journeys[i].MonitoredVehicleJourney.OriginName.value + " &#x21d2; " + journeys[i].MonitoredVehicleJourney.DestinationName.value) + "</p>";
