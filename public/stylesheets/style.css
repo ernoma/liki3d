@@ -57,14 +57,23 @@ body {
 #object_info {
     position: absolute;
     top: 70px;
-    left: 50%;
-    height: 100px;
-    width: 200px;
+    left: calc(50% - 200px);
+    width: 400px;
     opacity: 0.9;
     background-color: #ffffff;
     border-radius: 8px;
     border: 1px solid #222222;
     z-index: 100;
+    visibility: hidden;
+    overflow: hidden;
+    padding: 5px;
+}
+
+.object_info_content {
+    margin: 5px;
+    padding: 5px;
+    border-style: solid;
+    border-width: 1px;
 }
 
 #legend {
@@ -150,6 +159,24 @@ body {
     z-index: 1;
 }
 
+#main_area {
+    position: relative;
+    top: 60px;
+    height: calc(100% - 60px);
+}
+
 a {
   color: #00B7FF;
+}
+
+h1 {
+    font-size: x-large;
+}
+
+h2 {
+    font-size: large;
+}
+
+footer {
+    padding-left: 5px;
 }

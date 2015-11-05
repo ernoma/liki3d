@@ -128,6 +128,7 @@ function showMap() {
     var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
 	$("#terrain_info").text('Ladataan karttaa... valmis.');
     });
+    texture.minFilter = THREE.LinearFilter;
     //console.log(texture);
     //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
     var geometry = new THREE.PlaneGeometry(768, 512, origTerrainWidth - 1, origTerrainHeight - 1);
@@ -146,8 +147,6 @@ function showMap() {
 
     render();
 }    
-
-
 
 function addLights() {
     scene.add(new THREE.AmbientLight(0xbbbbbb));
@@ -184,32 +183,6 @@ function showExternalData() {
     setTimeout(function () {
 	$('#loading').hide();
     }, 1000);
-
-    /*showTampereOpenData()
-	.then(function (result) { return loadOBJMTLModel("/3d/bussi")})
-	.then(function (model) {
-	    busMesh = model;
-	    busUpdateIntervalID = setInterval(showBusses, 1000);
-	    setupTrafficLights();
-	    return loadSTLModel("clef");
-	})
-	.then(function (model) {
-	    model.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
-	    clefGeometry = model;
-	    showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
-	    showVisitTampereLocations();
-	})
-    	.then(function (result) { return showOSMData();})
-	.then(function () {
-	    $('#loading').hide();
-	})
-	.catch(function(error) {
-	    console.log("Error: ", error);
-	}).progress(function(event) {
-	    console.log("progress: ", event);
-	    // TODO notify user
-	})
-	.done();*/
 }
 
 
@@ -285,7 +258,7 @@ function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
 	
 	for (var i = 0; i < data.length; i++) {
 	    coord = projection([data[i].lng, data[i].lat]);
-            console.log(coord);
+            //console.log(coord);
 	    
 	    var mesh = undefined;
 	    if (data[i].light_name.charAt(0) == '_') {
@@ -320,7 +293,7 @@ function updateTrafficLightsMeta() {
     var URL = 'http://data.itsfactory.fi/trafficlights/meta/tampere';
     
     $.getJSON(URL, function (data) {
-	console.log(data);
+	//console.log(data);
 	
 	traffic_light_meta = data.Meta[0].signals;
 
@@ -489,114 +462,6 @@ function makeInitialTransformations(mesh, coord) {
     mesh.rotation.x = Math.PI / 2;
 }
 
-
-function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
-    var xy = {
-	minXY: calculateTileNumber(zoom, minLat, minLng),
-	maxXY: calculateTileNumber(zoom, maxLat, maxLng)
-    };
-
-    return xy;
-}
-
-function calculateTileNumber(zoom, lat, lon) {
-
-    var xy = {
-        x: undefined,
-        y: undefined,
-    };
-
-    var xtile = Math.floor((lon + 180) / 360 * (1<<zoom)) ;
-    var ytile = Math.floor((1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2 * (1<<zoom));
-    if (xtile < 0)
-	xtile = 0;
-    if (xtile >= (1<<zoom))
-	xtile = ((1<<zoom)-1);
-    if (ytile < 0)
-	ytile = 0;
-    if (ytile >= (1<<zoom))
-	ytile = ((1<<zoom)-1);
-    
-    xy.x = xtile;
-    xy.y = ytile;
-
-    return xy;
-}
-
-
-function calculateTilesBounds(tileNumbers, zoomLevel) {
-    var minX = tileNumbers.minXY.x < tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var maxX = tileNumbers.minXY.x > tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var minY = tileNumbers.minXY.y < tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-    var maxY = tileNumbers.minXY.y > tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-
-    console.log("minX, maxX, minY, maxY:", minX, maxX, minY, maxY);
-
-    var unit = 1.0 / (1 << zoomLevel);
-
-    //
-    // calculate sw
-    //
-    var sw_bounds = calculateTileBounds(minX, maxY, zoomLevel);    
-    //
-    // calculate ne
-    //
-    var ne_bounds = calculateTileBounds(maxX, minY, zoomLevel);
-
-    var bounds = {
-	sw: {
-	    lat: sw_bounds.minY,
-	    lng: sw_bounds.minX
-	},
-	ne: {
-	    lat: ne_bounds.maxY,
-	    lng: ne_bounds.maxX
-	}
-    }
-    return bounds;
-}
-
-function calculateTileBounds(tileX, tileY, zoom) {
-    var bounds = {
-        minY: tile2lat(tileY + 1, zoom),
-        maxY: tile2lat(tileY, zoom),
-        minX: tile2lon(tileX, zoom),
-        maxX: tile2lon(tileX + 1, zoom)
-    }
-
-    return bounds;
-}
-
-function tile2lon(x, zoom) {
-    return x / Math.pow(2.0, zoom) * 360.0 - 180;
-}
- 
-function tile2lat(y, zoom) {
-    var n = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, zoom);
-    return toDeg(Math.atan(sinh(n)));
-}
-
-function toDeg(rad) {
-    return rad / (Math.PI / 180);
-}
-
-function toRad(degrees){
-    return degrees * Math.PI / 180;
-}
-
-function sinh (arg) {
-  return (Math.exp(arg) - Math.exp(-arg)) / 2;
-}
-
-function createMesh(geom, imageFileName) {
-    var texture = THREE.ImageUtils.loadTexture("/images/" + imageFileName);
-    var mat = new THREE.MeshPhongMaterial({color: 0xffffff, specular: 0xffffff, shininess: 160, metal: true});
-    mat.map = texture;
-    
-    var mesh = new THREE.Mesh(geom, mat);
-    return mesh;
-}
-
 function render() {
     stats.update();
 
@@ -631,8 +496,6 @@ $( window ).resize(function() {
     camera.updateProjectionMatrix();
     renderer.setSize($('#webgl').innerWidth(), $('#webgl').innerHeight());
 });
-
-//var projector = new THREE.Projector();
 
 function onClick(event) {
 
@@ -689,20 +552,37 @@ $( window ).mousemove(function(event) {
 	}
     }
 
+    showInfo(allInfo);
+
+});
+
+function showInfo(allInfo) {
+
+    //console.log(allInfo);
+
     //
     // Show info of the object(s) to the user
     //
 
-    var content = "";
-
-    for (var i = 0; i < allInfo.length; i++) {
-	content += allInfo[i][0];
+    if (allInfo.length == 0) {
+        //$("#object_info").hide();
+        $("#object_info").css("visibility", "hidden");
     }
+    else {
+        var content = "";
 
-    $("#object_info").empty();
-    $("#object_info").append("<span>" + content + "</span>");    
-});
+        for (var i = 0; i < allInfo.length; i++) {
+            content += '<div class="object_info_content">' + allInfo[i][0] + '</div>';
+        }
 
+        $("#object_info").empty();
+        $("#object_info").append('<div id="object_info_contents">' + content + '</div>');
+        $("#object_info").css({
+            height: Number($("#object_info_contents").height()) + Number($("#object_info").css("padding"))
+        });
+        $("#object_info").css("visibility", "visible");
+    }
+}
 
 function createMinimizeEventHandlers() {
     $('#legend_min_href').on('click', function(event) {

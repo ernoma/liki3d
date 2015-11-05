@@ -35,18 +35,9 @@ var restaurants = [];
 var mail_boxes = [];
 var post_offices = [];
 var swimming_halls = [];
-var traffic_lights = [];
 
 var visit_tre_locations = [];
 var teosto_locations = [];
-
-// Traffic light materials
-var blackLightMaterial = new THREE.MeshBasicMaterial({color: 0x333333, emissive: 0x000000});
-var redLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFF0000});
-var amberLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFFDF00});
-var greenLightMaterial = new THREE.MeshLambertMaterial({emissive: 0x00FF00});
-
-var traffic_light_meta = undefined;
 
 var clefGeometry = undefined;
 var clefMaterial = new THREE.MeshPhongMaterial({color: 0xffd700, specular: 0xffffff, shininess: 160, metal: true});
@@ -56,7 +47,6 @@ var visitTreMesh = undefined;
 var busMesh = undefined;
 
 var busUpdateIntervalID = undefined;
-var trafficLightIntervalID = undefined;
 
 var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
 
@@ -243,14 +233,13 @@ function showLandmarks() {
                      loadedMesh.position.z += 0.3;
                  }
 		 loadedMesh.info = [];
-                 loadedMesh.info.push(data[i].long_name + ", korkeus: " + data[i].height + " metriä");
+                 loadedMesh.info.push("<p>Maamerkki - " + data[i].long_name + "</p><p>Korkeus: " + data[i].height + " metriä</p>");
 		 landmarks.push(loadedMesh);
 		 pivotPoint.add(loadedMesh);
 		 allObjects.push(loadedMesh);
 
 		 if (landmarks.length == data.length) {
 		     $("#landmark_info").text('Ladataan maamerkkejä... valmis.');
-		     //setupTrafficLights();
 		     showExternalData();
 		 }
 		 //scene.add(loadedMesh);
@@ -269,7 +258,6 @@ function showExternalData() {
 	.then(function (model) {
 	    busMesh = model;
 	    busUpdateIntervalID = setInterval(showBusses, 1000);
-	    setupTrafficLights();
 	    return loadSTLModel("clef");
 	})
 	.then(function (model) {
@@ -329,258 +317,6 @@ function showOSMData() {
     .then(function (model) { return getOSMData(model, "amenity%3Dbank", banks, "Pankki") });
 }
 
-function setupTrafficLights() {
-
-    var poleGeom = new THREE.CylinderGeometry(8, 8, 500);
-    var upPartGeom = new THREE.BoxGeometry(60, 160, 20);
-    var lightGeom = new THREE.CylinderGeometry(20, 20, 2, 12);
-
-    var poleMaterial = new THREE.MeshLambertMaterial({color: 0x848484});
-    var upPartMaterial = new THREE.MeshLambertMaterial({color: 0x2E2E2E});
-
-    var trafficLightMesh = new THREE.Mesh(poleGeom, poleMaterial);
-
-    var upPartMesh = new THREE.Mesh(upPartGeom, upPartMaterial);
-    upPartMesh.position.y = 170;
-    upPartMesh.position.z = 16;
-    trafficLightMesh.add(upPartMesh);
-
-    var topLightMesh = new THREE.Mesh(lightGeom, redLightMaterial);
-    topLightMesh.name = "red";
-    topLightMesh.rotation.x = 0.5 * Math.PI;
-    topLightMesh.position.y = 50;
-    topLightMesh.position.z = 11;
-    upPartMesh.add(topLightMesh);
-
-    var middleLightMesh = new THREE.Mesh(lightGeom, amberLightMaterial);
-    middleLightMesh.name = "amber";
-    middleLightMesh.rotation.x = 0.5 * Math.PI;
-    middleLightMesh.position.y = 0;
-    middleLightMesh.position.z = 11;
-    upPartMesh.add(middleLightMesh);
-
-    var bottomLightMesh = new THREE.Mesh(lightGeom, greenLightMaterial);
-    bottomLightMesh.name = "green";
-    bottomLightMesh.rotation.x = 0.5 * Math.PI;
-    bottomLightMesh.position.y = -50;
-    bottomLightMesh.position.z = 11;
-    upPartMesh.add(bottomLightMesh);
-
-    trafficLightMesh.scale.set(0.004, 0.004, 0.004);
-
-    //console.log(trafficLightMesh);
-
-    var pedestrianUpPartGeom = new THREE.BoxGeometry(60, 100, 20);
-    var pedestrianLightMesh = new THREE.Mesh(poleGeom, poleMaterial);
-    var pedestrianUpPartMesh = new THREE.Mesh(pedestrianUpPartGeom, upPartMaterial);
-    pedestrianUpPartMesh.position.y = 200;
-    pedestrianUpPartMesh.position.z = 16
-    pedestrianLightMesh.add(pedestrianUpPartMesh);
-    var pedestrianTopLightMesh = new THREE.Mesh(lightGeom, redLightMaterial);
-    pedestrianTopLightMesh.name = "red";
-    pedestrianTopLightMesh.rotation.x = 0.5 * Math.PI;
-    pedestrianTopLightMesh.position.y = 25;
-    pedestrianTopLightMesh.position.z = 11;
-    pedestrianUpPartMesh.add(pedestrianTopLightMesh);
-    var pedestrianBottomLightMesh = new THREE.Mesh(lightGeom, greenLightMaterial);
-    pedestrianBottomLightMesh.name = "green";
-    pedestrianBottomLightMesh.rotation.x = 0.5 * Math.PI;
-    pedestrianBottomLightMesh.position.y = -25;
-    pedestrianBottomLightMesh.position.z = 11;
-    pedestrianUpPartMesh.add(pedestrianBottomLightMesh);
-    pedestrianLightMesh.scale.set(0.004, 0.004, 0.004);
-
-    //scene.add(pedestrianLightMesh);
-
-    placeTrafficLights(trafficLightMesh, pedestrianLightMesh);
-}
-
-function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
-    d3.csv("data/traffic_lights.csv", function(data) {
-	//console.log(data);
-	
-	for (var i = 0; i < data.length; i++) {
-	    coord = projection([data[i].lng, data[i].lat]);
-            console.log(coord);
-	    
-	    var mesh = undefined;
-	    if (data[i].light_name.charAt(0) == '_') {
-		mesh = pedestrianLightMesh.clone();
-	    }
-	    else {
-		mesh = trafficLightMesh.clone();
-	    }
-
-	    var rot = Math.PI / 180 * data[i].angle;
-	    mesh.rotation.y = Math.PI - rot;
-	    //mesh.rotation.y = 0.5 * Math.PI;
-	    //mesh.rotation.z = -0.5 * Math.PI;
-	    //mesh.rotation.x = 1.5 * Math.PI;
-            makeInitialTransformations(mesh, coord);
-	    mesh.position.z += 1.2;
-	    mesh.name = data[i].light_name;
-	    
-	    mesh.info = [];
-	    mesh.info.push(data[i].light_name.charAt(0) == '_' ? "Jalankulkijan liikennevalo" : "Liikennevalo");
-	    pivotPoint.add(mesh);
-	    traffic_lights.push(mesh);
-	    allObjects.push(mesh);
-	}
-
-	updateTrafficLightsMeta();
-    });
-}
-
-function updateTrafficLightsMeta() {
-    var URL = 'http://data.itsfactory.fi/trafficlights/meta/tampere';
-    
-    $.getJSON(URL, function (data) {
-	console.log(data);
-	
-	traffic_light_meta = data.Meta[0].signals;
-
-	if (trafficLightIntervalID == undefined) {
-	    trafficLightIntervalID = setInterval(updateTrafficLights, 1000);
-	    setInterval(updateTrafficLightsMeta, 604800000);
-	}
-    });
-}
-
-function updateTrafficLights() {
-    var URL = 'http://data.itsfactory.fi/trafficlights/data/tampere';
-
-    $.getJSON(URL, function (data) {
-	//console.log(data);
-
-	var trafficLightStates = data.Data[0].rows[0].signalStates;
-
-	for (var i = 0; i < traffic_lights.length; i++) {
-	    var light_meshes = traffic_lights[i].children[0].children;
-
-	    for (var j = 0; j < traffic_light_meta.length; j++) {
-		if((traffic_lights[i].name.charAt(0) != '_' && traffic_lights[i].name.charAt(0) == traffic_light_meta[j].name) || 
-		   (traffic_lights[i].name.charAt(0) == '_' && traffic_lights[i].name.charAt(1) == traffic_light_meta[j].name.charAt(1))) {
-		    
-		    var state = data.Data[0].rows[0].signalStates.charAt(traffic_light_meta[j].index);
-		    
-		    switch(state) {
-		    case '0': // red and amber
-			for (var k = 0; k < light_meshes.length; k++) {
-			    if (light_meshes[k].name == "red") {
-				light_meshes[k].material = redLightMaterial;
-			    }
-			    else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = amberLightMaterial;
-                            }
-			    else {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-			}
-			break;
-		    case '1':
-		    case '3':
-		    case '4':
-		    case '5':
-		    case '6':
-		    case '7':
-		    case '8':
-		    case 'H': // green
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = greenLightMaterial;
-                            }
-                        }
-			break;
-		    case ':': // blinking green
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-				if (light_meshes[k].material == greenLightMaterial) {
-				    light_meshes[k].material = blackLightMaterial;
-				}
-				else {
-                                    light_meshes[k].material = greenLightMaterial;
-				}
-                            }
-                        }
-			break;
-		    case ';': // flashing amber
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-				if (light_meshes[k].material == amberLightMaterial) {
-                                    light_meshes[k].material = blackLightMaterial;
-				}
-				else {
-				    light_meshes[k].material = amberLightMaterial;
-				}
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-			break;
-		    case '<':
-		    case '=':
-		    case '>':
-		    case 'I': // amber
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = amberLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-                        break;
-		    case '9':
-		    case '?':
-		    case 'A':
-		    case 'B':
-		    case 'C':
-		    case 'D':
-		    case 'E':
-		    case 'F':
-		    case 'G':
-		    case 'J': // red
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = redLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-			break;
-		    default:
-			//nothing to do, state undefined
-		    }
-		    break;
-		}
-	    }
-        }
-    });
-}
-
 function showBusses() {
     var URL = 'http://data.itsfactory.fi/siriaccess/vm/json';
     
@@ -627,7 +363,7 @@ function showBusses() {
 		    mesh.rotation.y = journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
 		    mesh.info = [];
-                    mesh.info.push("Bussi, linja " + journeys[i].MonitoredVehicleJourney.LineRef.value + ", suunta: " + journeys[i].MonitoredVehicleJourney.OriginName.value + " &#x21d2; " + journeys[i].MonitoredVehicleJourney.DestinationName.value);
+                    mesh.info.push("<p>Bussi - Linja " + journeys[i].MonitoredVehicleJourney.LineRef.value + "</p><p>Suunta: " + journeys[i].MonitoredVehicleJourney.OriginName.value + " &#x21d2; " + journeys[i].MonitoredVehicleJourney.DestinationName.value) + "</p>";
 		    busses.push(mesh);
 		    pivotPoint.add(mesh);
 		    allObjects.push(mesh);
@@ -701,7 +437,14 @@ function getVisitTampereLocations(URL, offset) {
 							  if (visit_tre_locations[m].lng == result.results[j].geometry.location.lng &&
 							      visit_tre_locations[m].lat == result.results[j].geometry.location.lat)
 							  {
-							      visit_tre_locations[m].mesh.info.push(data[i].title);
+							      var text = "<p>Visit Tampere -kohde - " + data[i].title + "</p>";
+							      if (data[i].description != null) {
+								  text += "<p>" + data[i].description + "</p>";
+							      }
+							      if (data[i].contact_info.phone != null) {
+								  text += "<p>Puhelin: " + data[i].contact_info.phone + "</p>";
+							      }
+							      visit_tre_locations[m].mesh.info.push(text);
 							      //console.log("found in locations");
 							      found = true;
 							      break;
@@ -721,7 +464,14 @@ function getVisitTampereLocations(URL, offset) {
 							      makeInitialTransformations(mesh, coord);
 							      mesh.position.z += 2.5 * 1.2;
 							      mesh.info = [];
-							      mesh.info.push(data[i].title);
+							      var text = "<p>Visit Tampere -kohde - " + data[i].title + "</p>";
+                                                              if (data[i].description != null) {
+                                                                  text += "<p>" + data[i].description + "</p>";
+                                                              }
+                                                              if (data[i].contact_info.phone != null) {
+                                                                  text += "<p>Puhelin: " + data[i].contact_info.phone + "</p>";
+                                                              }
+                                                              mesh.info.push(text);
 							      visit_tre_objects.push(mesh);
 							      allObjects.push(mesh);
 							      pivotPoint.add(mesh);
@@ -769,7 +519,18 @@ function getVenuesData(data, i) {
                         if (teosto_locations[m].lng == result.venue.place.geoCoordinates.longitude &&
                             teosto_locations[m].lat == result.venue.place.geoCoordinates.latitude)
                         {
-			    teosto_locations[m].mesh.info.push(result.venue.name);
+			    var lower = result.venue.name.toLowerCase();
+			    var parts = lower.split(" ");
+			    var name = "";
+			    for (var p = 0; p < parts.length; p++) {
+				name += parts[p].charAt(0).toUpperCase();
+				if (parts[p].length > 1) {
+				    name += parts[p].slice(1);
+				}
+				name += " ";
+			    }
+			    name = name.substring(0, name.length - 1);
+			    teosto_locations[m].mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
                             //console.log("teosto venue found in locations");
                             found = true;
                             break;
@@ -805,7 +566,7 @@ function getVenuesData(data, i) {
 				name += " ";
 			    }
 			    name = name.substring(0, name.length - 1);
-			    mesh.info.push(name);
+			    mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
 			    pivotPoint.add(mesh);
 			    clefs.push(mesh);
 			    allObjects.push(mesh);
@@ -1110,21 +871,38 @@ $( window ).mousemove(function(event) {
 	    allInfo.push(object.info);
 	}
     }
+    
+    showInfo(allInfo);
+});
+
+function showInfo(allInfo) {
+    
+    //console.log(allInfo);
 
     //
     // Show info of the object(s) to the user
     //
 
-    var content = "";
-
-    for (var i = 0; i < allInfo.length; i++) {
-	content += allInfo[i][0];
+    if (allInfo.length == 0) {
+	//$("#object_info").hide();
+	$("#object_info").css("visibility", "hidden");
     }
+    else {
+	var content = "";
 
-    $("#object_info").empty();
-    $("#object_info").append("<span>" + content + "</span>");
-    
-});
+	for (var i = 0; i < allInfo.length; i++) {
+	    content += '<div class="object_info_content">' + allInfo[i][0] + '</div>';
+	}
+
+	$("#object_info").empty();
+	$("#object_info").append('<div id="object_info_contents">' + content + '</div>');
+	$("#object_info").css({
+	    height: Number($("#object_info_contents").height()) + Number($("#object_info").css("padding"))
+	});
+	$("#object_info").css("visibility", "visible");
+	
+    }
+}
 
 function getTampereOpenData(loadedMesh, name, objects) {
     var deferred = Q.defer();
@@ -1169,7 +947,9 @@ function getOSMDataWithURLForNodes(loadedMesh, api_url, objects, general_name) {
             //console.log(coord);
             makeInitialTransformations(mesh, coord);
             mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa tietoa");
+	    title = "<p>" + general_name;
+	    title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>"; 
+            mesh.info.push(title);
             tampereObjects.push(mesh);
             objects.push(mesh);
             allObjects.push(mesh);
@@ -1195,7 +975,9 @@ function getOSMDataWithURLForWays(loadedMesh, api_url, objects, general_name) {
             //console.log(coord);
             makeInitialTransformations(mesh, coord);
             mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
+	    title = "<p>" + general_name;
+            title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>";
+	    mesh.info.push(title);
             tampereObjects.push(mesh);
             objects.push(mesh);
             allObjects.push(mesh);
@@ -1223,7 +1005,9 @@ function getOSMData(loadedMesh, filter, objects, general_name) {
             //console.log(coord);
 	    makeInitialTransformations(mesh, coord);
 	    mesh.info = [];
-            mesh.info.push(data.elements[i].tags.name != undefined ? data.elements[i].tags.name : general_name + ", ei tarkempaa nimitietoa");
+	    title = "<p>" + general_name;
+            title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>";
+            mesh.info.push(title);
 	    tampereObjects.push(mesh);
 	    objects.push(mesh);
 	    allObjects.push(mesh);
