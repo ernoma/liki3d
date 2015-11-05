@@ -3,7 +3,7 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Tampere Liki 3D' });
+  res.render('junction', { title: 'Hämeenpuisto-Satakunnankatu-risteys' });
 });
 
 module.exports = router;

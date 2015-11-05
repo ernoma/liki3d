@@ -4,7 +4,7 @@ import os
 pngs = []
 
 for file in os.listdir("."):
-    if file.endswith(".png"):
+    if file.endswith(".jpg"):
         pngs.append(file)
 
 xs = set()
@@ -25,11 +25,11 @@ fileNames = ""
 for y in ys:
     params = '';
     for x in xs:
-        fileNames += zoom + '.' + x + '.' + y + '.png' + ' ';
+        fileNames += zoom + '.' + x + '.' + y + '.jpg' + ' ';
         
     #print fileNames.strip()
 
-params += fileNames.strip() + ' -tile ' + str(len(xs)) + 'x' + str(len(ys)) + ' -geometry 256x256+0+0 ' + zoom + '.png'
+params += fileNames.strip() + ' -tile ' + str(len(xs)) + 'x' + str(len(ys)) + ' -geometry 256x256+0+0 ' + zoom + '.jpg'
 
 print params
 call("montage " + params, shell=True)
