@@ -595,7 +595,7 @@ function createMinimizeEventHandlers() {
         }
         else {
             $('#legend_junction_content').show();
-            $('#legend_junction').css('height', 300);
+            $('#legend_junction').css('height', 330);
             $('#legend_junction').css('width', 300);
             $('#legend_min_img').attr('src', "/images/arrow_carrot-down.png");
         }

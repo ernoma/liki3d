@@ -79,9 +79,7 @@ $(document).ready( function() {
     var spinner = new Spinner(opts).spin(target);
     $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
-    stats = initStats();
-
-    //console.log(places);
+    //stats = initStats();
 
     scene = new THREE.Scene();
 
@@ -428,7 +426,7 @@ function getVisitTampereLocations(URL, offset) {
 							  {
 							      var text = "<p>Visit Tampere -kohde - " + data[i].title + "</p>";
 							      if (data[i].description != null) {
-								  text += "<p>" + data[i].description + "</p>";
+								  text += "<p>" + (data[i].description.length <= 200 ? data[i].description : data[i].description.substr(0, 197) + "...") + "</p>";
 							      }
 							      if (data[i].contact_info.phone != null) {
 								  text += "<p>Puhelin: " + data[i].contact_info.phone + "</p>";
@@ -455,7 +453,7 @@ function getVisitTampereLocations(URL, offset) {
 							      mesh.info = [];
 							      var text = "<p>Visit Tampere -kohde - " + data[i].title + "</p>";
                                                               if (data[i].description != null) {
-                                                                  text += "<p>" + data[i].description + "</p>";
+								  text += "<p>" + (data[i].description.length <= 200 ? data[i].description : data[i].description.substr(0, 197) + "...") + "</p>";
                                                               }
                                                               if (data[i].contact_info.phone != null) {
                                                                   text += "<p>Puhelin: " + data[i].contact_info.phone + "</p>";
@@ -758,7 +756,7 @@ function createMesh(geom, imageFileName) {
 }
 
 function render() {
-    stats.update();
+    //stats.update();
 
     for (var i = 0; i < clefs.length; i++) {
 	clefs[i].rotation.y += 0.02;
@@ -880,7 +878,9 @@ function showInfo(allInfo) {
 	var content = "";
 
 	for (var i = 0; i < allInfo.length; i++) {
-	    content += '<div class="object_info_content">' + allInfo[i][0] + '</div>';
+	    for (var j = 0; j < allInfo[i].length; j++) {
+		content += '<div class="object_info_content">' + allInfo[i][j] + '</div>';
+	    }
 	}
 
 	$("#object_info").empty();

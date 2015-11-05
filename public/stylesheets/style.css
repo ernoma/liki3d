@@ -16,7 +16,7 @@ body {
     border-radius: 8px;
     border: 1px solid #222222;
     position: absolute;
-    top: calc(10% + 50px);
+    top: 70px;
     left: 0%;
     z-index: 100;
     height: calc(50% - 50px);
@@ -57,8 +57,8 @@ body {
 #object_info {
     position: absolute;
     top: 70px;
-    left: calc(50% - 200px);
-    width: 400px;
+    left: 20px;
+    width: 800px;
     opacity: 0.9;
     background-color: #ffffff;
     border-radius: 8px;
@@ -93,7 +93,7 @@ body {
     top: 70px;
     right: 20px;
     width: 300px;
-    height: 300px;
+    height: 330px;
     opacity: 0.9;
     background-color: #ffffff;
     border-radius: 8px;

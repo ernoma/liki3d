@@ -1,6 +1,5 @@
 must:
 -about-sivu ja siihen liittyvät mahd. muut sivut
--tietojen näyttö kohteista, myös duplikaattisijainneista
 -hiiren kursorin käyttö, touchpadin ja controls-aputeksi alkuun
 -esitys?
 
@@ -13,7 +12,6 @@ kivoja:
 
 joskus:
 -osm-datojen haku yhdellä haulla
--bussien parempi bearing
 -basemapin valinta
 -osm-tietojen päivtykset
 -koodin siistintä
