@@ -113,7 +113,7 @@ $(document).ready( function() {
     //var axes = new THREE.AxisHelper(200);
     //scene.add(axes);
 
-    $("#loading_text").append('<br><span id="light_info">Laitetaan valot päälle</span>');
+    //$("#loading_text").append('<br><span id="light_info">Laitetaan valot päälle</span>');
     addLights();
     
     $("#loading_text").append('<br><span id="bg_info">Ladataan taustakuvaa...</span>');
@@ -189,7 +189,7 @@ function addLights() {
     lensFlare.position.copy(spotLightFlare.position);
     scene.add(lensFlare);
 
-    $("#light_info").text('Laitetaan valot päälle... valmis.');
+    //$("#light_info").text('Laitetaan valot päälle... valmis.');
 }
 
 function showLandmarks() {
