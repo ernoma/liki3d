@@ -1,7 +1,8 @@
 must:
 -about-sivu ja siihen liittyvät mahd. muut sivut
 -hiiren kursorin käyttö, touchpadin ja controls-aputeksi alkuun
--esitys?
+-mit-license
+-liikennevalosivun info-ruudun leveys
 
 kivoja:
 -loading progress paremmaksi

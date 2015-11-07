@@ -238,7 +238,7 @@ function showLandmarks() {
 
 function showExternalData() {
     
-    $("#loading_text").append('<br><span id="external_data_info">Ladataan pienoismalleja...</span>');
+    $("#loading_text").append('<br><span id="external_data_info">Ladataan karttakohteita...</span>');
 
     showTampereOpenData()
 	.then(function (result) { return loadOBJMTLModel("/3d/bussi")})
