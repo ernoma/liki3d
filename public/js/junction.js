@@ -58,7 +58,7 @@ $(document).ready( function() {
     var spinner = new Spinner(opts).spin(target);
     $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
 
-    stats = initStats();
+    //stats = initStats();
 
     scene = new THREE.Scene();
 
@@ -463,7 +463,7 @@ function makeInitialTransformations(mesh, coord) {
 }
 
 function render() {
-    stats.update();
+    //stats.update();
 
     controls.update();
     requestAnimationFrame(render);
@@ -578,7 +578,8 @@ function showInfo(allInfo) {
         $("#object_info").empty();
         $("#object_info").append('<div id="object_info_contents">' + content + '</div>');
         $("#object_info").css({
-            height: Number($("#object_info_contents").height()) + Number($("#object_info").css("padding"))
+            //height: Number($("#object_info_contents").height()) + Number($("#object_info").css("padding"))
+//width: Number($("#object_info_contents").width()) + Number($("#object_info").css("padding"))
         });
         $("#object_info").css("visibility", "visible");
     }

@@ -17,7 +17,7 @@ body {
     border: 1px solid #222222;
     position: absolute;
     top: 70px;
-    left: 0%;
+    left: 20px;
     z-index: 100;
     height: calc(50% - 50px);
     width: 25%;
@@ -54,11 +54,37 @@ body {
     z-index: 100;
 }
 
+#introduction {
+    position: absolute;
+    height: 320px;
+    top: calc(50% - 160px);
+    width: 420px;
+    left: calc(50% - 220px);
+    opacity: 1;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #222222;
+    z-index: 200;
+    padding: 10px;
+}
+
+#introduction_ul li {
+    padding-bottom: 10px;
+}
+
+#introduction_ok_button {
+    padding-top: 10px;
+    text-align: center;	
+}
+
+#introduction_browsers {
+    padding-top: 30px;
+}
+
 #object_info {
     position: absolute;
     top: 70px;
     left: 20px;
-    width: 800px;
     opacity: 0.9;
     background-color: #ffffff;
     border-radius: 8px;
