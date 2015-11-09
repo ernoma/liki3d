@@ -3,17 +3,17 @@
 -koodin siistintä
 -osm-tietojen päivitykset
 -info-ruutujen korkeudet
--bussien kääntö pinnan muotojen mukaan
+-teosto-data omalle palvelimelle
 
 kivoja:
 -liikennevaloille eri taustakuva
 -tyylikkäämpi UI
--teosto-data omalle palvelimelle
 -eng/fi
 -ei päällekkäisiä, leijuvia, maan sisään meneviä, yms. objekteja
--lataa halutut asiat manuaalisesti
+-bussien kääntö pinnan muotojen mukaan
 
 joskus:
 -osm-datojen haku yhdellä haulla
 -basemapin valinta
--settings ja settingsien tallennus localstorageen
+-settings ja settingsien tallennus localstorageen ja modulus.io:n
+-lataa halutut asiat manuaalisesti, jos asetuksissa niin

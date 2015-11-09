@@ -146,13 +146,6 @@ function setupBackground() {
 	$("#bg_info").text('Ladataan taustakuva... valmis.');
 	$("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
 	showTerrain();
-    }, function(event) {
-        //console.log(event);
-        if (event.total != null && event.loaded != null) {
-            var percentProgress = Math.round(event.loaded / event.total * 100);
-            //console.log(percentProgress);
-            $("#bg_info").text('Ladataan taustakuva... ' + percentProgress + '% ladattu');
-        }
     }, function (event) {
         console.log(event);
     });
@@ -650,14 +643,6 @@ function modifyPlaneGeometryHeight(data) {
 
     var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
 	$("#terrain_info").text('Ladataan karttaa... valmis.');
-    }, function(event) {
-        //console.log(event);
-	console.log("progress terrain");
-        if (event.total != null && event.loaded != null) {
-            var percentProgress = Math.round(event.loaded / event.total * 100);
-            //console.log(percentProgress);
-            $("#terrain_info").text('Ladataan karttaa... ' + percentProgress + '% ladattu');
-        }
     }, function (event) {
         console.log(event);
     });
