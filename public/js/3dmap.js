@@ -48,9 +48,44 @@ var busMesh = undefined;
 
 var busUpdateIntervalID = undefined;
 
-var textureNames = ["Love_Is_All_Bright_Logo_1024x1024.jpg", "treregionab_visittampere_posa_1024x1024.jpg", "verkosto_1024x1024.png"];
-
 var overpass_server = "http://overpass.osm.rambler.ru/cgi/interpreter"; // http://overpass-api.de/api/interpreter
+
+var neula_size = 1347 + 274550;
+var klingendahl_size = 896 + 39779;
+var tampella_size = 391 + 11613;
+var torni_size = 802 + 593244;
+var trikoo_size = 536 + 90330;
+var frenckell_size = 596 + 76587;
+var haulitorni_size = 359 + 403808;
+var tako_size = 380 + 71590;
+var kehrasaari_size = 238 + 27806;
+var attila_size = 590 + 168299;
+var pyynikki_size = 407 + 360267;
+var finlayson_size = 391 + 116086;
+var hatanpaa_size = 534 + 15698;
+var sarvis_size = 389 + 7403;
+
+var total_landmarks_size = neula_size + klingendahl_size + tampella_size + torni_size + trikoo_size + frenckell_size + haulitorni_size + tako_size + kehrasaari_size + attila_size + pyynikki_size + finlayson_size + hatanpaa_size + sarvis_size;
+
+var loaded_landmarks_size = 0;
+
+var swimming_icon_size = 352 + 9162;
+var library_icon_size = 207 + 11352;
+var bus_icon_size = 1091 + 171356;
+var clef_icon_size = 267784;
+var pharmacy_icon_size = 498 + 11956;
+var cafe_icon_size = 204 + 4346;
+var shop_icon_size = 354 + 12840;
+var restaurant_icon_size = 202 + 13687;
+var letter_icon_size = 202 + 2453;
+var post_office_icon_size = 657 + 4771;
+var bank_icon_size = 662 + 47152;
+
+var total_icons_size = swimming_icon_size + library_icon_size + bus_icon_size + clef_icon_size +
+    pharmacy_icon_size + cafe_icon_size + shop_icon_size + restaurant_icon_size +
+    letter_icon_size + post_office_icon_size + bank_icon_size;
+
+var loaded_icons_size = 0;
 
 $(document).ready( function() {
 
@@ -111,6 +146,15 @@ function setupBackground() {
 	$("#bg_info").text('Ladataan taustakuva... valmis.');
 	$("#loading_text").append('<br><span id="terrain_info">Ladataan karttaa...</span>');
 	showTerrain();
+    }, function(event) {
+        //console.log(event);
+        if (event.total != null && event.loaded != null) {
+            var percentProgress = Math.round(event.loaded / event.total * 100);
+            //console.log(percentProgress);
+            $("#bg_info").text('Ladataan taustakuva... ' + percentProgress + '% ladattu');
+        }
+    }, function (event) {
+        console.log(event);
     });
     texture.minFilter = THREE.LinearFilter;
     var backgroundMesh = new THREE.Mesh(
@@ -142,7 +186,12 @@ function showTerrain() {
 	$("#height_info").text('Ladataan kartan korkeustietoja... valmis.');
 
     }, function(event) {
-	console.log(event);
+	//console.log(event);
+	if (event.total != null && event.loaded != null) {
+	    var percentProgress = Math.round(event.loaded / event.total * 100);
+	    //console.log(percentProgress);
+	    $("#height_info").text('Ladataan kartan korkeustietoja... ' + percentProgress + '% ladattu');
+	}
     }, function (event) {
 	console.log(event);
     });
@@ -212,8 +261,27 @@ function showLandmarks() {
 		     showExternalData();
 		 }
 		 //scene.add(loadedMesh);
-	     });
-	     })(data, i);
+	     }, function(event) {
+		 console.log(event);
+		 if (event.total != null && event.loaded != null && event.total == event.loaded) {
+
+                     var targetName = event.target.responseURL.split("/");
+                     targetName = targetName[targetName.length-1].split(".");
+                     targetName = targetName[0];
+                     console.log(targetName);
+
+                     loaded_landmarks_size += event.total;
+		     
+                     var percentProgress = Math.round(loaded_landmarks_size / total_landmarks_size * 100);
+                     //console.log(percentProgress);
+		     var percentProgress = Math.round(event.loaded / event.total * 100);
+		     //console.log(percentProgress);
+		     $("#landmark_info").text('Ladataan maamerkkejä... ' + percentProgress + '% ladattu');
+		 }
+	     }, function (event) {
+		 console.log(event);
+	     }
+	     )})(data, i);
 	}
     });
 }
@@ -242,8 +310,22 @@ function showExternalData() {
 	.catch(function(error) {
 	    console.log("Error: ", error);
 	}).progress(function(event) {
-	    console.log("progress: ", event);
-	    // TODO notify user
+	    //console.log("progress: ", event);
+	    
+	    if (event.total != null && event.loaded != null && event.total == event.loaded) {
+
+		//var targetName = event.target.responseURL.split("/");
+		//targetName = targetName[targetName.length-1].split(".");
+		//targetName = targetName[0];
+		//console.log(targetName);
+		
+		loaded_icons_size += event.total;
+
+		var percentProgress = Math.round(loaded_icons_size / total_icons_size * 100);
+		//console.log(percentProgress);
+
+		$("#external_data_info").text('Ladataan karttakohteita... ' + percentProgress + '% ladattu');
+	    }
 	})
 	.done();
 }
@@ -569,6 +651,16 @@ function modifyPlaneGeometryHeight(data) {
 
     var texture = THREE.ImageUtils.loadTexture(URL, undefined, function () {
 	$("#terrain_info").text('Ladataan karttaa... valmis.');
+    }, function(event) {
+        //console.log(event);
+	console.log("progress terrain");
+        if (event.total != null && event.loaded != null) {
+            var percentProgress = Math.round(event.loaded / event.total * 100);
+            //console.log(percentProgress);
+            $("#terrain_info").text('Ladataan karttaa... ' + percentProgress + '% ladattu');
+        }
+    }, function (event) {
+        console.log(event);
     });
     //console.log(texture);
     //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);

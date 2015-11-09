@@ -1,20 +1,19 @@
-must:
--about-sivu ja siihen liittyvät mahd. muut sivut
--hiiren kursorin käyttö, touchpadin ja controls-aputeksi alkuun
+-kuvaus.txt:n sisältöä about-sivulle
 -mit-license
--liikennevalosivun info-ruudun leveys
+-koodin siistintä
+-osm-tietojen päivitykset
+-info-ruutujen korkeudet
+-bussien kääntö pinnan muotojen mukaan
 
 kivoja:
--loading progress paremmaksi
+-liikennevaloille eri taustakuva
+-tyylikkäämpi UI
 -teosto-data omalle palvelimelle
--bussien kääntö pinnan muotojen mukaan
 -eng/fi
 -ei päällekkäisiä, leijuvia, maan sisään meneviä, yms. objekteja
+-lataa halutut asiat manuaalisesti
 
 joskus:
 -osm-datojen haku yhdellä haulla
 -basemapin valinta
--osm-tietojen päivtykset
--koodin siistintä
--lataa halutut asiat manuaalisesti
 -settings ja settingsien tallennus localstorageen
