@@ -1,4 +1,3 @@
--kuvaus.txt:n sisältöä about-sivulle
 -mit-license
 -koodin siistintä
 -osm-tietojen päivitykset

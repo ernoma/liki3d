@@ -191,6 +191,10 @@ body {
     height: calc(100% - 60px);
 }
 
+.team_image {
+    margin-right: 10px;
+}
+
 a {
   color: #00B7FF;
 }
