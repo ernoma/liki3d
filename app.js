@@ -1,3 +1,7 @@
+//
+// The application would actually run fine without the Node.js server part except that it uses ejs views
+// which would nevertheless be easy to change to php or something else.
+
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -59,6 +63,9 @@ app.use(function(err, req, res, next) {
   });
 });
 
+//
+// Heroku provides process.env.PORT, locally use the port 8080
+//
 var port = process.env.PORT || 8080;
 app.listen(port);
 console.log('The magic happens on port ' + port);

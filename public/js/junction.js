@@ -1,39 +1,81 @@
+//
+// Three.js basic objects
+//
 var scene = undefined;
 var camera = undefined;
 var renderer = undefined;
+
+//
+// For viewing nice photo behind the map
+//
 var backgroundScene = undefined;
 var backgroundCamera = undefined;
 
+//
+// Show fps (or other) info to help application development
+//
 var stats = undefined;
 
+//
+// For user to navigate around the scene
+//
 var controls = undefined;
 
+//
+// Size of the map
+//
 var terrainWidth = 768;
 var terrainHeight = 512;
-
+//
+// Parameters for the THREE.Plane map. These should be small when no specific
+// reason to be large like when terrain height map is used.
+//
 var origTerrainWidth = 20;
 var origTerrainHeight = 20;
 
+//
+// For projecting lng,lat coordinates to the coordinates of the map plan shown on the screen
+//
 var projection = undefined;
 
-var gameBoard = undefined;
+//
+// The map plane shown for the user
+//
+var junctionMap = undefined;
+//
+// Pivot point is unnecessary in this case and Three.JS meshes could be added directly to scene
+//
 var pivotPoint = undefined;
 
+//
+// These arrays are used for storing meshes to help for iterating over them in various occasions
+//
 var allObjects = [];
 var traffic_lights = [];
 
+//
 // Traffic light materials
+//
 var blackLightMaterial = new THREE.MeshBasicMaterial({color: 0x333333, emissive: 0x000000});
 var redLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFF0000});
 var amberLightMaterial = new THREE.MeshLambertMaterial({emissive: 0xFFDF00});
 var greenLightMaterial = new THREE.MeshLambertMaterial({emissive: 0x00FF00});
 
+//
+// Store the meta information from the ITS Factory server to this variable
+//
 var traffic_light_meta = undefined;
 
+//
+// The variable is used to make sure that only one interval timer is used updating traffic light data
+//
 var trafficLightIntervalID = undefined;
 
 $(document).ready( function() {
 
+    //
+    // Minimize event handlers are used in the UI to show and hide various info windows
+    //
     createMinimizeEventHandlers();
 
     var opts = {
@@ -98,6 +140,9 @@ $(document).ready( function() {
  * Setup functionality
  ******************************************************************************/
 
+//
+// Show a nice photo behind the map
+//
 function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg', undefined, function() {
 	$("#bg_info").text('Ladataan taustakuva... valmis.');
@@ -120,6 +165,9 @@ function setupBackground() {
     backgroundScene.add(backgroundMesh);
 }
 
+//
+// Construct the map UI, starting with the map plane
+//
 function showMap() {
 
     var URL = '/images/mmlorto_tampere_junction.jpg';
@@ -130,7 +178,6 @@ function showMap() {
     });
     texture.minFilter = THREE.LinearFilter;
     //console.log(texture);
-    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
     var geometry = new THREE.PlaneGeometry(768, 512, origTerrainWidth - 1, origTerrainHeight - 1);
     var material = new THREE.MeshPhongMaterial({
 	map: texture,
@@ -140,17 +187,28 @@ function showMap() {
     var ground = new THREE.Mesh(geometry, material);
     ground.rotation.x = -Math.PI / 2;
 
-    gameBoard = ground;
-    scene.add(gameBoard);
+    junctionMap = ground;
+    scene.add(junctionMap);
 
+    //
+    // Get and show the traffic light data from the external server via its API
+    //
     showExternalData();
 
+    //
+    // Ready to show the scene for the user
+    //
     render();
 }    
-
+//
+// Without lights nothing is shown in the scene
+//
 function addLights() {
     scene.add(new THREE.AmbientLight(0xbbbbbb));
-        
+    
+    //
+    // For nice introduction to Three.JS see the book "Learning Three.js: The JavaScript 3D Library for WebGL - Second Edition", https://www.packtpub.com/web-development/learning-threejs-javascript-3d-library-webgl-second-edition" by Jos Dirksen
+    //
     var spotLightFlare = new THREE.SpotLight(0xffffff);
     spotLightFlare.position.set(120, 610, -3000);
     spotLightFlare.castShadow = false;
@@ -174,18 +232,26 @@ function addLights() {
     $("#light_info").text('Laitetaan valot päälle... valmis.');
 }
 
+//
+// Get and show the traffic light data from the external server via its API
+//
 function showExternalData() {
     
     $("#loading_text").append('<br><span id="external_data_info">Ladataan liikennevaloja...</span>');
 
     setupTrafficLights();
 
+    //
+    // Set one second timeout to allow user to have a chance to glance the loading information panel
+    //
     setTimeout(function () {
 	$('#loading').hide();
     }, 1000);
 }
 
-
+//
+// Create the meshes for the pedestrian and vehicle traffic light and then call placeTrafficLights function to place the lights to the map
+//
 function setupTrafficLights() {
 
     var poleGeom = new THREE.CylinderGeometry(8, 8, 500);
@@ -247,11 +313,12 @@ function setupTrafficLights() {
     pedestrianUpPartMesh.add(pedestrianBottomLightMesh);
     pedestrianLightMesh.scale.set(0.04, 0.04, 0.04);
 
-    //scene.add(pedestrianLightMesh);
-
     placeTrafficLights(trafficLightMesh, pedestrianLightMesh);
 }
 
+//
+// Load traffic light locations and angles and add all traffic lights to the scene
+//
 function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
     d3.csv("data/traffic_lights.csv", function(data) {
 	//console.log(data);
@@ -270,9 +337,6 @@ function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
 
 	    var rot = Math.PI / 180 * data[i].angle;
 	    mesh.rotation.y = Math.PI - rot;
-	    //mesh.rotation.y = 0.5 * Math.PI;
-	    //mesh.rotation.z = -0.5 * Math.PI;
-	    //mesh.rotation.x = 1.5 * Math.PI;
             makeInitialTransformations(mesh, coord);
 	    mesh.position.z += 1.2;
 	    mesh.name = data[i].light_name;
@@ -289,6 +353,9 @@ function placeTrafficLights(trafficLightMesh, pedestrianLightMesh) {
     });
 }
 
+//
+// Traffic lights meta information contains necessary index information for each traffic light that is used when receiving the real time traffic light data
+//
 function updateTrafficLightsMeta() {
     var URL = 'http://data.itsfactory.fi/trafficlights/meta/tampere';
     
@@ -298,12 +365,15 @@ function updateTrafficLightsMeta() {
 	traffic_light_meta = data.Meta[0].signals;
 
 	if (trafficLightIntervalID == undefined) {
-	    trafficLightIntervalID = setInterval(updateTrafficLights, 1000);
-	    setInterval(updateTrafficLightsMeta, 604800000);
+	    trafficLightIntervalID = setInterval(updateTrafficLights, 1000); // Update traffic lights states once per second
+	    setInterval(updateTrafficLightsMeta, 604800000); // Update meta information once per week
 	}
     });
 }
 
+//
+// Update the color of the traffic lights based on the state information received from the ITS Factory server
+//
 function updateTrafficLights() {
     var URL = 'http://data.itsfactory.fi/trafficlights/data/tampere';
 
@@ -313,9 +383,9 @@ function updateTrafficLights() {
 	var trafficLightStates = data.Data[0].rows[0].signalStates;
 
 	for (var i = 0; i < traffic_lights.length; i++) {
-	    var light_meshes = traffic_lights[i].children[0].children;
+	    var light_meshes = traffic_lights[i].children[0].children; // the actual lights (red, amber and green) are children of the up part that is child of the pole mesh
 
-	    for (var j = 0; j < traffic_light_meta.length; j++) {
+	    for (var j = 0; j < traffic_light_meta.length; j++) { // See the ITS Factory documents for the traffic light naming, and indexing info
 		if((traffic_lights[i].name.charAt(0) != '_' && traffic_lights[i].name.charAt(0) == traffic_light_meta[j].name) || 
 		   (traffic_lights[i].name.charAt(0) == '_' && traffic_lights[i].name.charAt(1) == traffic_light_meta[j].name.charAt(1))) {
 		    
@@ -462,14 +532,17 @@ function makeInitialTransformations(mesh, coord) {
     mesh.rotation.x = Math.PI / 2;
 }
 
+//
+// Necessary function for showing and updating the Three.js scene
+//
 function render() {
     //stats.update();
 
     controls.update();
     requestAnimationFrame(render);
     
-    pivotPoint.rotation.x = gameBoard.rotation.x;
-    pivotPoint.rotation.z = gameBoard.rotation.z;
+    pivotPoint.rotation.x = junctionMap.rotation.x;
+    pivotPoint.rotation.z = junctionMap.rotation.z;
 
     renderer.autoClear = false;
     renderer.clear();
@@ -477,6 +550,9 @@ function render() {
     renderer.render(scene, camera);
 }
 
+//
+// Useful info during the application development
+//
 function initStats() {
     var stats = new Stats();
     
@@ -491,12 +567,18 @@ function initStats() {
     return stats;
 }
 
+//
+// When user resizes the browser window resize the scene accordingly
+//
 $( window ).resize(function() {
     camera.aspect = $('#webgl').innerWidth() / $('#webgl').innerHeight();
     camera.updateProjectionMatrix();
     renderer.setSize($('#webgl').innerWidth(), $('#webgl').innerHeight());
 });
 
+//
+// This event is also used just for debugging purposes, to show which object(s) user clicked on the scene
+//
 function onClick(event) {
 
     //console.log(event);
@@ -522,6 +604,9 @@ function onClick(event) {
 
 $( window ).click(onClick);
 
+//
+// Show information of the objects in the scene when user moves mouse cursor around the scene
+//
 $( window ).mousemove(function(event) {
      var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY) / renderer.domElement.height ) * 2 + 1);
 
@@ -565,7 +650,6 @@ function showInfo(allInfo) {
     //
 
     if (allInfo.length == 0) {
-        //$("#object_info").hide();
         $("#object_info").css("visibility", "hidden");
     }
     else {
@@ -581,6 +665,9 @@ function showInfo(allInfo) {
     }
 }
 
+//
+// Minimize event handlers are used in the UI to show and hide various info windows
+//
 function createMinimizeEventHandlers() {
     $('#legend_min_href').on('click', function(event) {
         event.preventDefault();
@@ -603,13 +690,11 @@ function createMinimizeEventHandlers() {
         if ($('#loading_min_img').attr('src') == "/images/arrow_carrot-down.png") {
             $('#loading_items').hide();
             $('#loading').css('height', 30);
-            //$('#loading').css('width', '25%');
             $('#loading_min_img').attr('src', "/images/arrow_carrot-up.png");
         }
         else {
             $('#loading_items').show();
             $('#loading').css('height', 'calc(50% - 50px)');
-            //$('#loading').css('width', '25%');
             $('#loading_min_img').attr('src', "/images/arrow_carrot-down.png");
         }
     });

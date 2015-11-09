@@ -1,25 +1,59 @@
+//
+// Three.js basic objects
+//
 var scene = undefined;
 var camera = undefined;
 var renderer = undefined;
+
+//
+// For viewing nice photo behind the map
+//
 var backgroundScene = undefined;
 var backgroundCamera = undefined;
 
+//
+// Show fps (or other) info to help application development 
+//
 var stats = undefined;
 
+//
+// For user to navigate around the scene
+//
 var controls = undefined;
 
+//
+// Size of the map plane
+//
 var terrainWidth = 2048;
 var terrainHeight = 2048;
-
+//
+// Size of the terrain height map.
+//
 var origTerrainWidth = 300;
 var origTerrainHeight = 300;
 
+//
+// For projecting lng,lat coordinates to the coordinates of the map plane shown on the screen
+//
 var projection = undefined;
+
+//
+// For modifying map plane height based on the National Land Survey Of Finland data
+//
 var heightMap = undefined;
 
-var gameBoard = undefined;
+//
+// The map plane shown for the user
+//
+var areaMap = undefined;
+//
+// Pivot point is unnecessary in this case and Three.JS meshes could be added directly to scene
+//
 var pivotPoint = undefined;
 
+//
+// These arrays are used for storing meshes to help for iterating over them in various occasions
+//
 var allObjects = [];
 var tampereObjects = [];
 var visit_tre_objects = [];
@@ -36,20 +70,28 @@ var mail_boxes = [];
 var post_offices = [];
 var swimming_halls = [];
 
+//
+// These arrays are used to avoid adding a mesh to the same location twice
+//
 var visit_tre_locations = [];
 var teosto_locations = [];
 
+//
+// These are used to avoid having unnecessary geometry, material and mesh duplicates. Could do this also other way
+//
 var clefGeometry = undefined;
 var clefMaterial = new THREE.MeshPhongMaterial({color: 0xffd700, specular: 0xffffff, shininess: 160, metal: true});
-
 var visitTreMesh = undefined;
-
 var busMesh = undefined;
 
-var busUpdateIntervalID = undefined;
-
+//
+// OpenStreetMap data is read from this server
+//
 var overpass_server = "http://overpass.osm.rambler.ru/cgi/interpreter"; // http://overpass-api.de/api/interpreter
 
+//
+// These are used for showing progress information for the user. Could instead read file sizes on disk.
+//
 var neula_size = 1347 + 274550;
 var klingendahl_size = 896 + 39779;
 var tampella_size = 391 + 11613;
@@ -64,11 +106,12 @@ var pyynikki_size = 407 + 360267;
 var finlayson_size = 391 + 116086;
 var hatanpaa_size = 534 + 15698;
 var sarvis_size = 389 + 7403;
-
 var total_landmarks_size = neula_size + klingendahl_size + tampella_size + torni_size + trikoo_size + frenckell_size + haulitorni_size + tako_size + kehrasaari_size + attila_size + pyynikki_size + finlayson_size + hatanpaa_size + sarvis_size;
-
 var loaded_landmarks_size = 0;
 
+//
+// See the previous comment
+//
 var swimming_icon_size = 352 + 9162;
 var library_icon_size = 207 + 11352;
 var bus_icon_size = 1091 + 171356;
@@ -80,20 +123,28 @@ var restaurant_icon_size = 202 + 13687;
 var letter_icon_size = 202 + 2453;
 var post_office_icon_size = 657 + 4771;
 var bank_icon_size = 662 + 47152;
-
 var total_icons_size = swimming_icon_size + library_icon_size + bus_icon_size + clef_icon_size +
     pharmacy_icon_size + cafe_icon_size + shop_icon_size + restaurant_icon_size +
     letter_icon_size + post_office_icon_size + bank_icon_size;
-
 var loaded_icons_size = 0;
+
 
 $(document).ready( function() {
 
+    //
+    // Introduction shown for the user when opening the application 
+    //
     $('#introduction_ok_button').on('click', function(event) {
 	$('#introduction').hide();
     });
 
+    //
+    // Show legend panel for the user to show/hide data at the map  
+    //
     createLegend();
+    //
+    // Minimize event handlers are used in the UI to show and hide various info windows
+    //
     createMinimizeEventHandlers();
 
     //stats = initStats();
@@ -113,6 +164,9 @@ $(document).ready( function() {
 
     controls = new THREE.TrackballControls(camera, renderer.domElement);
 
+    //
+    // For info see, for example blog from Bjørn Sandvik: http://blog.thematicmapping.org/2013/10/terrain-building-with-threejs-part-1.html
+    // 
     projection = d3.geo.mercator()
 	.translate([(terrainWidth + 5) / 2, (terrainHeight + 272) / 2])
 	.scale(121500)
@@ -130,7 +184,6 @@ $(document).ready( function() {
     //var axes = new THREE.AxisHelper(200);
     //scene.add(axes);
 
-    //$("#loading_text").append('<br><span id="light_info">Laitetaan valot päälle</span>');
     addLights();
     
     $("#loading_text").append('<br><span id="bg_info">Ladataan taustakuvaa...</span>');
@@ -141,6 +194,9 @@ $(document).ready( function() {
  * Setup functionality
  ******************************************************************************/
 
+//
+// Show a nice photo behind the map
+//
 function setupBackground() {
     var texture = THREE.ImageUtils.loadTexture( '/images/backgrounds/2.jpg', undefined, function() {
 	$("#bg_info").text('Ladataan taustakuva... valmis.');
@@ -165,6 +221,9 @@ function setupBackground() {
     backgroundScene.add(backgroundMesh);
 }
 
+//
+// Construct the map UI, starting with the map plane
+//
 function showTerrain() {
     var terrainLoader = new THREE.TerrainLoader();
     $("#loading_text").append('<br><span id="height_info">Ladataan kartan korkeustietoja...</span>');
@@ -190,9 +249,15 @@ function showTerrain() {
     });
 }
 
+//
+// Without lights nothing is shown in the scene
+//
 function addLights() {
     scene.add(new THREE.AmbientLight(0xbbbbbb));
-        
+
+    //
+    // For nice introduction to Three.JS see the book "Learning Three.js: The JavaScript 3D Library for WebGL - Second Edition", https://www.packtpub.com/web-development/learning-threejs-javascript-3d-library-webgl-second-edition" by Jos Dirksen
+    //
     var spotLightFlare = new THREE.SpotLight(0xffffff);
     spotLightFlare.position.set(120, 610, -3000);
     spotLightFlare.castShadow = false;
@@ -213,7 +278,6 @@ function addLights() {
     lensFlare.position.copy(spotLightFlare.position);
     scene.add(lensFlare);
 
-    //$("#light_info").text('Laitetaan valot päälle... valmis.');
 }
 
 function showLandmarks() {
@@ -224,13 +288,16 @@ function showLandmarks() {
 
         for (var i = 0; i < data.length; i++) {
         
+	    //
+	    // Since the objects are loaded asynchronously, the data and i need to be passed this way to the "onLoaded" function that is the third parameter of the loaded.load function.
+	    //
 	    (function(data, i)
 	     { loader.load("/3d/" + data[i].object_name + ".obj", "/3d/" + data[i].object_name + ".mtl", function(loadedMesh) {
 		 //console.log(loadedMesh);
 		 loadedMesh.scale.set(0.12, 0.12, 0.12);
 		 coord = projection([data[i].lng, data[i].lat]);
 		 //console.log(coord);
-		 makeInitialTransformations(loadedMesh, coord);
+		 makeCoordinateTransformation(loadedMesh, coord);
 		 if (data[i].object_name == "haulitorni") {
 		     loadedMesh.position.z -= 2.8;
 		 }
@@ -253,7 +320,6 @@ function showLandmarks() {
 		     $("#landmark_info").text('Ladataan maamerkkejä... valmis.');
 		     showExternalData();
 		 }
-		 //scene.add(loadedMesh);
 	     }, function(event) {
 		 //console.log(event);
 		 if (event.total != null && event.loaded != null && event.total == event.loaded) {
@@ -278,15 +344,24 @@ function showLandmarks() {
     });
 }
 
+
+//
+// Get and show the open data from the external servers via their APIs
+//
 function showExternalData() {
     
     $("#loading_text").append('<br><span id="external_data_info">Ladataan karttakohteita...</span>');
 
+    //
+    // The Q library (https://github.com/kriskowal/q) is used to avoid too deep nested function call hierarchies
+    // when the data is loaded asynchronously. Also the "Three.js Cookbook" by Jos Dirksen has useful information
+    // on this topic
+    //
     showTampereOpenData()
 	.then(function (result) { return loadOBJMTLModel("/3d/bussi")})
 	.then(function (model) {
 	    busMesh = model;
-	    busUpdateIntervalID = setInterval(showBusses, 1000);
+	    setInterval(showBusses, 1000); // update busses once per second
 	    return loadSTLModel("clef");
 	})
 	.then(function (model) {
@@ -297,7 +372,7 @@ function showExternalData() {
 	})
     	.then(function (result) { return showOSMData();})
 	.then(function () {
-	    $('#loading').hide();
+	    $('#loading').hide(); // All 3D models have been loaded, so the UI info panel can be closed
 	})
 	.catch(function(error) {
 	    console.log("Error: ", error);
@@ -381,8 +456,7 @@ function showBusses() {
                     var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
                     var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		    if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			makeInitialTransformations(busses[j], coord);
-			// TODO: calculate bearing from the previous location
+			makeCoordinateTransformation(busses[j], coord);
 			busses[j].rotation.y = Math.PI - journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    }
 		    break;
@@ -390,7 +464,7 @@ function showBusses() {
 	    }
 	    if (!found) {
 		// new vehicle, add to scene
-		var mesh = busMesh.clone();//new THREE.Mesh(busGeometry, mat);
+		var mesh = busMesh.clone();
 		//console.log(mesh);
 		//var box = new THREE.Box3().setFromObject( mesh );
 		//console.log( box.min, box.max, box.size() );
@@ -402,7 +476,7 @@ function showBusses() {
 		var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
 		//console.log(x, y);
 		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-		    makeInitialTransformations(mesh, coord);
+		    makeCoordinateTransformation(mesh, coord);
 		    mesh.rotation.y = Math.PI - journeys[i].MonitoredVehicleJourney.Bearing * (Math.PI/180);
 		    mesh.journey = journeys[i];
 		    mesh.info = [];
@@ -410,13 +484,10 @@ function showBusses() {
 		    busses.push(mesh);
 		    pivotPoint.add(mesh);
 		    allObjects.push(mesh);
-		    //scene.add(mesh);
 		}
 	    }
 	}
     });
-
-    //clearInterval(busUpdateIntervalID);
 }
 
 function showVisitTampereLocations() {
@@ -430,7 +501,7 @@ function getVisitTampereLocations(URL, offset) {
    
     var params = {
 	type: 'location',
-	limit: 50,
+	limit: 50, // max number of items to get
 	offset: offset,
 	lang: 'fi'
     }
@@ -463,6 +534,9 @@ function getVisitTampereLocations(URL, offset) {
 		var addr = full_address.replace(/, /g, '%2C').replace(/ /g, '+');
 		//console.log(addr);
 		
+		//
+		// Free to use geocoder is used to find out coordinates for the addresses
+		//
 		$.getJSON('http://api.okf.fi/gis/1/geocode.json?address=' + addr + '&lat=&lng=&language=fin',
 			  (function(i) {
 			      return function(result) {
@@ -504,7 +578,7 @@ function getVisitTampereLocations(URL, offset) {
 							  if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
 							      var mesh = visitTreMesh.clone();
 							      
-							      makeInitialTransformations(mesh, coord);
+							      makeCoordinateTransformation(mesh, coord);
 							      mesh.position.z += 2.5 * 1.2;
 							      mesh.info = [];
 							      var text = "<p>Visit Tampere -kohde - " + data[i].title + "</p>";
@@ -518,7 +592,6 @@ function getVisitTampereLocations(URL, offset) {
 							      visit_tre_objects.push(mesh);
 							      allObjects.push(mesh);
 							      pivotPoint.add(mesh);
-							      //scene.add(mesh);
 							      visit_tre_locations.push({mesh: mesh, lng: result.results[j].geometry.location.lng, lat: result.results[j].geometry.location.lat});
 							  }
 						      } // if (!found)
@@ -583,7 +656,7 @@ function showTeostoVenues() {
 		//console.log("x: " + x + ", y: " + y);
 
 		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-		    makeInitialTransformations(mesh, coord);
+		    makeCoordinateTransformation(mesh, coord);
 		    mesh.position.z += height * 3;
 		    mesh.info = [];
 		    var lower = venue.name.toLowerCase();
@@ -601,7 +674,6 @@ function showTeostoVenues() {
 		    pivotPoint.add(mesh);
 		    clefs.push(mesh);
 		    allObjects.push(mesh);
-		    //scene.add(mesh);
 
 		    teosto_locations.push({mesh: mesh, lng: venue.place.geoCoordinates.longitude, lat: venue.place.geoCoordinates.latitude});
 		}
@@ -615,7 +687,7 @@ function showTeostoVenues() {
  * Helper functionality
  ******************************************************************************/
 
-function modifyPlaneGeometryHeight(data) {
+function modifyPlaneGeometryHeight(terrainLoaderData) {
 
     var URL = '/images/osm_tampere_large.jpg';
     //var URL = '/images/Rock_rauta_rakkaus_1024x1024.png';
@@ -626,7 +698,6 @@ function modifyPlaneGeometryHeight(data) {
         console.log(event);
     });
     //console.log(texture);
-    //var geometry = new THREE.PlaneGeometry(2048, 2048, 20, 20);
     var geometry = new THREE.PlaneGeometry(2048, 2048, origTerrainWidth - 1, origTerrainHeight - 1);
     var material = new THREE.MeshPhongMaterial({
 	map: texture,
@@ -639,8 +710,8 @@ function modifyPlaneGeometryHeight(data) {
     var k = 0;
 
     for (var i = 0, l = geometry.vertices.length; i < l; i++) {
-	//var height = data[i] / 255 * 21;
-	var height = data[i] / 65535 * 21;
+	//var height = terrainLoaderData[i] / 255 * 21;
+	var height = terrainLoaderData[i] / 65535 * 21;
 	geometry.vertices[i].z = height;
 	heightMap[j][k] = height;
 	k++;
@@ -657,12 +728,12 @@ function modifyPlaneGeometryHeight(data) {
     var ground = new THREE.Mesh(geometry, material);
     ground.rotation.x = -Math.PI / 2;
 
-    gameBoard = ground;
-    scene.add(gameBoard);
+    areaMap = ground;
+    scene.add(areaMap);
 
     render();
 
-    console.log("done modifying z");
+    //console.log("done modifying z");
 }    
 
 
@@ -670,7 +741,7 @@ function translate(point) {
   return [point[0] - (terrainWidth / 2), point[1] - (terrainHeight / 2)];
 }
 
-function makeInitialTransformations(mesh, coord) {
+function makeCoordinateTransformation(mesh, coord) {
 
     var x = coord[0];
     x = Math.round(x / terrainWidth * origTerrainWidth);
@@ -684,105 +755,6 @@ function makeInitialTransformations(mesh, coord) {
     mesh.rotation.x = Math.PI / 2;
 }
 
-
-function calculateTileNumbers(zoom, minLat, minLng, maxLat, maxLng) {
-    var xy = {
-	minXY: calculateTileNumber(zoom, minLat, minLng),
-	maxXY: calculateTileNumber(zoom, maxLat, maxLng)
-    };
-
-    return xy;
-}
-
-function calculateTileNumber(zoom, lat, lon) {
-
-    var xy = {
-        x: undefined,
-        y: undefined,
-    };
-
-    var xtile = Math.floor((lon + 180) / 360 * (1<<zoom)) ;
-    var ytile = Math.floor((1 - Math.log(Math.tan(toRad(lat)) + 1 / Math.cos(toRad(lat))) / Math.PI) / 2 * (1<<zoom));
-    if (xtile < 0)
-	xtile = 0;
-    if (xtile >= (1<<zoom))
-	xtile = ((1<<zoom)-1);
-    if (ytile < 0)
-	ytile = 0;
-    if (ytile >= (1<<zoom))
-	ytile = ((1<<zoom)-1);
-    
-    xy.x = xtile;
-    xy.y = ytile;
-
-    return xy;
-}
-
-
-function calculateTilesBounds(tileNumbers, zoomLevel) {
-    var minX = tileNumbers.minXY.x < tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var maxX = tileNumbers.minXY.x > tileNumbers.maxXY.x ? tileNumbers.minXY.x : tileNumbers.maxXY.x;
-    var minY = tileNumbers.minXY.y < tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-    var maxY = tileNumbers.minXY.y > tileNumbers.maxXY.y ? tileNumbers.minXY.y : tileNumbers.maxXY.y;
-
-    console.log("minX, maxX, minY, maxY:", minX, maxX, minY, maxY);
-
-    var unit = 1.0 / (1 << zoomLevel);
-
-    //
-    // calculate sw
-    //
-    var sw_bounds = calculateTileBounds(minX, maxY, zoomLevel);    
-    //
-    // calculate ne
-    //
-    var ne_bounds = calculateTileBounds(maxX, minY, zoomLevel);
-
-    var bounds = {
-	sw: {
-	    lat: sw_bounds.minY,
-	    lng: sw_bounds.minX
-	},
-	ne: {
-	    lat: ne_bounds.maxY,
-	    lng: ne_bounds.maxX
-	}
-    }
-    return bounds;
-}
-
-function calculateTileBounds(tileX, tileY, zoom) {
-    var bounds = {
-        minY: tile2lat(tileY + 1, zoom),
-        maxY: tile2lat(tileY, zoom),
-        minX: tile2lon(tileX, zoom),
-        maxX: tile2lon(tileX + 1, zoom)
-    }
-
-    return bounds;
-}
-
-function tile2lon(x, zoom) {
-    return x / Math.pow(2.0, zoom) * 360.0 - 180;
-}
- 
-function tile2lat(y, zoom) {
-    var n = Math.PI - (2.0 * Math.PI * y) / Math.pow(2.0, zoom);
-    return toDeg(Math.atan(sinh(n)));
-}
-
-function toDeg(rad) {
-    return rad / (Math.PI / 180);
-}
-
-function toRad(degrees){
-    return degrees * Math.PI / 180;
-}
-
-function sinh (arg) {
-  return (Math.exp(arg) - Math.exp(-arg)) / 2;
-}
-
 function createMesh(geom, imageFileName) {
     var texture = THREE.ImageUtils.loadTexture("/images/" + imageFileName);
     var mat = new THREE.MeshPhongMaterial({color: 0xffffff, specular: 0xffffff, shininess: 160, metal: true});
@@ -792,6 +764,9 @@ function createMesh(geom, imageFileName) {
     return mesh;
 }
 
+//
+// Necessary function for showing and updating the Three.js scene
+//
 function render() {
     //stats.update();
 
@@ -810,8 +785,8 @@ function render() {
     controls.update();
     requestAnimationFrame(render);
     
-    pivotPoint.rotation.x = gameBoard.rotation.x;
-    pivotPoint.rotation.z = gameBoard.rotation.z;
+    pivotPoint.rotation.x = areaMap.rotation.x;
+    pivotPoint.rotation.z = areaMap.rotation.z;
 
     renderer.autoClear = false;
     renderer.clear();
@@ -819,6 +794,9 @@ function render() {
     renderer.render(scene, camera);
 }
 
+//
+// Useful info during the application development
+//
 function initStats() {
     var stats = new Stats();
     
@@ -839,8 +817,9 @@ $( window ).resize(function() {
     renderer.setSize($('#webgl').innerWidth(), $('#webgl').innerHeight());
 });
 
-//var projector = new THREE.Projector();
-
+//
+// This event is also used just for debugging purposes, to show which object(s) user clicked on the scene
+//
 function onClick(event) {
 
     //console.log(event);
@@ -866,6 +845,9 @@ function onClick(event) {
 
 $( window ).click(onClick);
 
+//
+// Show information of the objects in the scene when user moves mouse cursor around the scene
+//
 $( window ).mousemove(function(event) {
      var mouse = new THREE.Vector2((event.clientX / renderer.domElement.width ) * 2 - 1, -( (event.clientY) / renderer.domElement.height ) * 2 + 1);
 
@@ -908,7 +890,6 @@ function showInfo(allInfo) {
     //
 
     if (allInfo.length == 0) {
-	//$("#object_info").hide();
 	$("#object_info").css("visibility", "hidden");
     }
     else {
@@ -937,7 +918,7 @@ function getTampereOpenData(loadedMesh, name, objects) {
             mesh.scale.set(2, 2, 2);
             coord = projection([data.features[i].geometry.coordinates[0], data.features[i].geometry.coordinates[1]]);
             //console.log(coord);
-	    makeInitialTransformations(mesh, coord);
+	    makeCoordinateTransformation(mesh, coord);
 	    mesh.info = [];
             mesh.info.push(data.features[i].properties.NIMI);
             tampereObjects.push(mesh);
@@ -953,6 +934,9 @@ function getTampereOpenData(loadedMesh, name, objects) {
     return deferred.promise;
 }
 
+//
+// "Food" shops can be either nodes or ways and can have attribute shop=supermarket or shop=convenience
+//
 function getOSMDataForShops(loadedMesh) {
     return getOSMDataWithURLForNodes(loadedMesh, overpass_server + "?data=%5Bout%3Ajson%5D%3B%0A%28%0A%20%20node%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22convenience%22%5D%3B%0A%20%20node%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22supermarket%22%5D%3B%0A%29%3B%0Aout%3B%0A", shops, "Ruokakauppa").
 	then(getOSMDataWithURLForWays(loadedMesh, overpass_server + "?data=%5Bout%3Ajson%5D%3B%0A%28%0A%20%20way%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22convenience%22%5D%3B%0A%20%20way%2861.2740%2C%2023.3317%2C%2061.701%2C%2024.253%29%5B%22shop%22%3D%22supermarket%22%5D%3B%0A%29%3B%0Aout%20center%20meta%3B%0A", shops, "Ruokakauppa"));
@@ -968,7 +952,7 @@ function getOSMDataWithURLForNodes(loadedMesh, api_url, objects, general_name) {
             mesh.scale.set(2, 2, 2);
             coord = projection([data.elements[i].lon, data.elements[i].lat]);
             //console.log(coord);
-            makeInitialTransformations(mesh, coord);
+            makeCoordinateTransformation(mesh, coord);
             mesh.info = [];
 	    title = "<p>" + general_name;
 	    title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>"; 
@@ -977,7 +961,6 @@ function getOSMDataWithURLForNodes(loadedMesh, api_url, objects, general_name) {
             objects.push(mesh);
             allObjects.push(mesh);
             pivotPoint.add(mesh);
-            //scene.add(mesh);
         }
 
         deferred.resolve();
@@ -996,7 +979,7 @@ function getOSMDataWithURLForWays(loadedMesh, api_url, objects, general_name) {
             mesh.scale.set(2, 2, 2);
             coord = projection([data.elements[i].center.lon, data.elements[i].center.lat]);
             //console.log(coord);
-            makeInitialTransformations(mesh, coord);
+            makeCoordinateTransformation(mesh, coord);
             mesh.info = [];
 	    title = "<p>" + general_name;
             title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>";
@@ -1005,7 +988,6 @@ function getOSMDataWithURLForWays(loadedMesh, api_url, objects, general_name) {
             objects.push(mesh);
             allObjects.push(mesh);
             pivotPoint.add(mesh);
-            //scene.add(mesh);
         }
 
         deferred.resolve();
@@ -1013,8 +995,6 @@ function getOSMDataWithURLForWays(loadedMesh, api_url, objects, general_name) {
 
     return deferred.promise;
 }
-
-//model, "shop%3Dsupermarket", shops, "Ruokakauppa")
 
 function getOSMData(loadedMesh, filter, objects, general_name) {
     var deferred = Q.defer();
@@ -1026,7 +1006,7 @@ function getOSMData(loadedMesh, filter, objects, general_name) {
             mesh.scale.set(2, 2, 2);
             coord = projection([data.elements[i].lon, data.elements[i].lat]);
             //console.log(coord);
-	    makeInitialTransformations(mesh, coord);
+	    makeCoordinateTransformation(mesh, coord);
 	    mesh.info = [];
 	    title = "<p>" + general_name;
             title += data.elements[i].tags.name != undefined ? " - " + data.elements[i].tags.name + "</p>" : "<p>Ei tarkempaa nimitietoa.</p>";
@@ -1035,7 +1015,6 @@ function getOSMData(loadedMesh, filter, objects, general_name) {
 	    objects.push(mesh);
 	    allObjects.push(mesh);
             pivotPoint.add(mesh);
-	    //scene.add(mesh);
 	}
 
 	deferred.resolve();
@@ -1044,18 +1023,9 @@ function getOSMData(loadedMesh, filter, objects, general_name) {
     return deferred.promise;
 }
 
-/*function loadTexture(path) {
-    var deferred = Q.defer();
-
-    THREE.ImageUtils.loadTexture(path, null, function (loaded) {
-	deferred.resolve(loaded);
-    }, function (error) {
-	deferred.reject(error);
-    });
-
-    return deferred.promise;
-}*/
-
+//
+// Functions for loading 3D models
+//
 function loadSTLModel(name) {
 
     var deferred = Q.defer();
@@ -1092,6 +1062,9 @@ function loadOBJMTLModel(path) {
     return deferred.promise;
 }
 
+//
+// Minimize event handlers are used in the UI to show and hide various info windows
+//
 function createMinimizeEventHandlers() {
     $('#legend_min_href').on('click', function(event) {
 	event.preventDefault();
@@ -1114,14 +1087,12 @@ function createMinimizeEventHandlers() {
         if ($('#loading_min_img').attr('src') == "/images/arrow_carrot-down.png") {
             $('#loading_items').hide();
             $('#loading').css('height', 30);
-            //$('#loading').css('width', '25%');
-            $('#loading_min_img').attr('src', "/images/arrow_carrot-up.png");
+             $('#loading_min_img').attr('src', "/images/arrow_carrot-up.png");
         }
         else {
             $('#loading_items').show();
             $('#loading').css('height', 'calc(50% - 50px)');
-            //$('#loading').css('width', '25%');
-            $('#loading_min_img').attr('src', "/images/arrow_carrot-down.png");
+             $('#loading_min_img').attr('src', "/images/arrow_carrot-down.png");
         }
     });
 
@@ -1131,6 +1102,10 @@ function createMinimizeEventHandlers() {
     });
 }
 
+
+//
+// Show legend panel for the user to show/hide data at the map  
+//
 function createLegend() {
     
     d3.csv("data/legend.csv", function(data) {

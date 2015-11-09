@@ -1,11 +1,5 @@
--Readme.md
--mit-license
--koodin siistintä ja jakoon
 
-priority:
 -osm-tietojen päivitykset
-
-kivoja:
 -liikennevalosivulle eri taustakuva
 -tyylikkäämpi UI
 -eng/fi

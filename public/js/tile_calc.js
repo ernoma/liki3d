@@ -1,3 +1,6 @@
+//
+// These functions are useful when creating map textures but they are used only during the application development
+//
 
 var zoom = 17;
 var minLat = 61.499544;

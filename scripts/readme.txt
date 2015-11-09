@@ -1,0 +1,3 @@
+- The teosto folder contains Python script to retrieve and store Teosto venues data as json.
+- The heightmap folder contains build_height_map.py script to create height.bin file from the NLS Finland data that can be loaded by the TerrainLoader.js. The script uses preloaded ascii data that has been obtained from the kartat.kapsi.fi
+- The tiles folder contains scripts and textual data files to obtain and combine slippy tiles to one image that is loaded as a texture to the appliaction
