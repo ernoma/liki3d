@@ -292,7 +292,7 @@ function showExternalData() {
 	.then(function (model) {
 	    model.applyMatrix( new THREE.Matrix4().makeTranslation(88.28013229370117, -107.79578018188477, -0.15874999761581415) );
 	    clefGeometry = model;
-	    showTeostoVenues('http://api.teosto.fi/2014/municipality?name=TAMPERE&method=venues');
+	    showTeostoVenues();
 	    showVisitTampereLocations();
 	})
     	.then(function (result) { return showOSMData();})
@@ -538,98 +538,77 @@ function getVisitTampereLocations(URL, offset) {
     });
 }
 
-function showTeostoVenues(URL) {
+function showTeostoVenues() {
     
-    $.getJSON(URL, function (data) {
-	console.log(data);
+    $.getJSON("/data/teosto_venues.json", function (data) {
+	//console.log(data);
 
-	var i = 0;
-	getVenuesData(data, i);
-    });
-}
-
-function getVenuesData(data, i) {
-
-    if (i < data.venues.length - 1) {
-	setTimeout(
-	    function() { 
-		$.getJSON(data.venues[i].url, function (result) {
-		    //console.log(result.venue);
-
-		    var found = false;
+	for (var i = 0; i < data.length; i++) {
+	    var venue = data[i];
+	    //console.log(result.venue);
+	    var found = false;
 		    
-                    for (var m = 0; m < teosto_locations.length; m++) {
-                        if (teosto_locations[m].lng == result.venue.place.geoCoordinates.longitude &&
-                            teosto_locations[m].lat == result.venue.place.geoCoordinates.latitude)
-                        {
-			    var lower = result.venue.name.toLowerCase();
-			    var parts = lower.split(" ");
-			    var name = "";
-			    for (var p = 0; p < parts.length; p++) {
-				name += parts[p].charAt(0).toUpperCase();
-				if (parts[p].length > 1) {
-				    name += parts[p].slice(1);
-				}
-				name += " ";
-			    }
-			    name = name.substring(0, name.length - 1);
-			    teosto_locations[m].mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
-                            //console.log("teosto venue found in locations");
-                            found = true;
-                            break;
-                        }
-                    }
-		    
-		    if (!found) {
-
-			var height = 3.7648086547851562 * 0.4;
-		    
-			var mesh = new THREE.Mesh(clefGeometry, clefMaterial);
-			mesh.venue = result.venue;
-			mesh.scale.set(2, 2, 2);
-
-			var coord = projection([result.venue.place.geoCoordinates.longitude, result.venue.place.geoCoordinates.latitude]);
-			var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
-			var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
-	    
-			//console.log("x: " + x + ", y: " + y);
-
-			if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
-			    makeInitialTransformations(mesh, coord);
-			    mesh.position.z += height * 3;
-			    mesh.info = [];
-			    var lower = result.venue.name.toLowerCase();
-			    var parts = lower.split(" ");
-			    var name = "";
-			    for (var p = 0; p < parts.length; p++) {
-				name += parts[p].charAt(0).toUpperCase();
-				if (parts[p].length > 1) {
-				    name += parts[p].slice(1);
-				}
-				name += " ";
-			    }
-			    name = name.substring(0, name.length - 1);
-			    mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
-			    pivotPoint.add(mesh);
-			    clefs.push(mesh);
-			    allObjects.push(mesh);
-			    //scene.add(mesh);
-
-			    teosto_locations.push({mesh: mesh, lng: result.venue.place.geoCoordinates.longitude, lat: result.venue.place.geoCoordinates.latitude});
+            for (var m = 0; m < teosto_locations.length; m++) {
+                if (teosto_locations[m].lng == venue.place.geoCoordinates.longitude &&
+                    teosto_locations[m].lat == venue.place.geoCoordinates.latitude)
+                {
+		    var lower = venue.name.toLowerCase();
+		    var parts = lower.split(" ");
+		    var name = "";
+		    for (var p = 0; p < parts.length; p++) {
+			name += parts[p].charAt(0).toUpperCase();
+			if (parts[p].length > 1) {
+			    name += parts[p].slice(1);
 			}
-
+			name += " ";
 		    }
-		}).done(function(data, i) {
-		    return function(result) {
-			//console.log("in done, data: " + data + ", i: ", + i);
-			getVenuesData(data, i+1);
-		    };
-		}(data, i)) // getJSON
-	    }, 100); // setTimeout
-    }
-    else if (data.response_meta.next != "undefined") {
-	showTeostoVenues(data.response_meta.next);
-    }
+		    name = name.substring(0, name.length - 1);
+		    teosto_locations[m].mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
+                    //console.log("teosto venue found in locations");
+                    found = true;
+                    break;
+                }
+            } 
+	    if (!found) {
+		var height = 3.7648086547851562 * 0.4;
+		    
+		var mesh = new THREE.Mesh(clefGeometry, clefMaterial);
+		mesh.venue = venue;
+		mesh.scale.set(2, 2, 2);
+
+		var coord = projection([venue.place.geoCoordinates.longitude, venue.place.geoCoordinates.latitude]);
+		var x = Math.round(coord[0] / terrainWidth * origTerrainWidth);
+		var y = Math.round(coord[1] / terrainHeight * origTerrainHeight);
+	    
+		//console.log("x: " + x + ", y: " + y);
+
+		if (x >= 0 && y >= 0 && x < origTerrainWidth && y < origTerrainHeight) {
+		    makeInitialTransformations(mesh, coord);
+		    mesh.position.z += height * 3;
+		    mesh.info = [];
+		    var lower = venue.name.toLowerCase();
+		    var parts = lower.split(" ");
+		    var name = "";
+		    for (var p = 0; p < parts.length; p++) {
+			name += parts[p].charAt(0).toUpperCase();
+			if (parts[p].length > 1) {
+			    name += parts[p].slice(1);
+			}
+			name += " ";
+		    }
+		    name = name.substring(0, name.length - 1);
+		    mesh.info.push("<p>Teoston tapahtumapaikka - " + name + "</p>");
+		    pivotPoint.add(mesh);
+		    clefs.push(mesh);
+		    allObjects.push(mesh);
+		    //scene.add(mesh);
+
+		    teosto_locations.push({mesh: mesh, lng: venue.place.geoCoordinates.longitude, lat: venue.place.geoCoordinates.latitude});
+		}
+
+	    }
+	}
+    });	
 }
 
 /*******************************************************************************

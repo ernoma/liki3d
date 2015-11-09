@@ -1,8 +1,7 @@
--mit-license
--koodin siistintä
 -osm-tietojen päivitykset
 -info-ruutujen korkeudet
--teosto-data omalle palvelimelle
+-mit-license
+-koodin siistintä ja jakoon
 
 kivoja:
 -liikennevaloille eri taustakuva
