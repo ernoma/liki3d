@@ -1,17 +1,17 @@
--osm-tietojen päivitykset
--info-ruutujen korkeudet
+-Readme.md
 -mit-license
 -koodin siistintä ja jakoon
 
+priority:
+-osm-tietojen päivitykset
+
 kivoja:
--liikennevaloille eri taustakuva
+-liikennevalosivulle eri taustakuva
 -tyylikkäämpi UI
 -eng/fi
 -ei päällekkäisiä, leijuvia, maan sisään meneviä, yms. objekteja
 -bussien kääntö pinnan muotojen mukaan
-
-joskus:
 -osm-datojen haku yhdellä haulla
 -basemapin valinta
 -settings ja settingsien tallennus localstorageen ja modulus.io:n
--lataa halutut asiat manuaalisesti, jos asetuksissa niin
+-lataa halutut asiat manuaalisesti, jos settingseissä määritelty niin

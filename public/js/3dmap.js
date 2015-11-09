@@ -922,9 +922,6 @@ function showInfo(allInfo) {
 
 	$("#object_info").empty();
 	$("#object_info").append('<div id="object_info_contents">' + content + '</div>');
-	$("#object_info").css({
-	    height: Number($("#object_info_contents").height()) + Number($("#object_info").css("padding"))
-	});
 	$("#object_info").css("visibility", "visible");
 	
     }

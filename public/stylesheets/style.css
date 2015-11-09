@@ -56,7 +56,7 @@ body {
 
 #introduction {
     position: absolute;
-    height: 320px;
+    overflow: hidden;
     top: calc(50% - 160px);
     width: 420px;
     left: calc(50% - 220px);
