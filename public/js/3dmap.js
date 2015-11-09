@@ -262,20 +262,19 @@ function showLandmarks() {
 		 }
 		 //scene.add(loadedMesh);
 	     }, function(event) {
-		 console.log(event);
+		 //console.log(event);
 		 if (event.total != null && event.loaded != null && event.total == event.loaded) {
 
-                     var targetName = event.target.responseURL.split("/");
-                     targetName = targetName[targetName.length-1].split(".");
-                     targetName = targetName[0];
-                     console.log(targetName);
+                     //var targetName = event.target.responseURL.split("/");
+                     //targetName = targetName[targetName.length-1].split(".");
+                     //targetName = targetName[0];
+                     //console.log(targetName);
 
                      loaded_landmarks_size += event.total;
 		     
                      var percentProgress = Math.round(loaded_landmarks_size / total_landmarks_size * 100);
                      //console.log(percentProgress);
-		     var percentProgress = Math.round(event.loaded / event.total * 100);
-		     //console.log(percentProgress);
+		     
 		     $("#landmark_info").text('Ladataan maamerkkejä... ' + percentProgress + '% ladattu');
 		 }
 	     }, function (event) {

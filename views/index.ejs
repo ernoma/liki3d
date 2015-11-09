@@ -2,6 +2,35 @@
 <html lang="en">
 <% include header %>
 <body>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="/vendor/spin.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+    $('#explore').addClass("active");
+     var opts = {
+        lines: 13, // The number of lines to draw
+        length: 10, // The length of each line
+        width: 5, // The line thickness
+        radius: 15, // The radius of the inner circle
+        corners: 1, // Corner roundness (0..1)
+        rotate: 0, // The rotation offset
+        direction: 1, // 1: clockwise, -1: counterclockwise
+        color: '#000', // #rgb or #rrggbb or array of colors
+        speed: 1, // Rounds per second
+        trail: 60, // Afterglow percentage
+        shadow: false, // Whether to render a shadow
+        hwaccel: false, // Whether to use hardware acceleration
+        className: 'spinner', // The CSS class to assign to the spinner
+        zIndex: 2e9, // The z-index (defaults to 2000000000)
+        top: '20%', // Top position relative to parent
+        left: '50%' // Left position relative to parent
+    };
+    var target = document.getElementById('spinner');
+    var spinner = new Spinner(opts).spin(target);
+    $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
+    });
+  </script>
+
   <% include navbar %>
   
   <!--<div id="main_area">-->
@@ -52,12 +81,8 @@
 
   <% include footer %>
 
-  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script type="text/javascript" src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="/vendor/bootstrap-switch/bootstrap-switch.min.js"></script>
-  <!--<script src="http://cdn.leafletjs.com/leaflet-0.7.5/leaflet.js"></script>-->
-  <!--<script type="text/javascript" src="/vendor/Leaflet.awesome-markers/leaflet.awesome-markers.min.js"></script>-->
-  <script type="text/javascript" src="/vendor/spin.min.js"></script>
   <script type="text/javascript" src="/vendor/threejs/three.min.js"></script>
   <script type="text/javascript" src="/vendor/d3/d3.min.js"></script>
   <script type="text/javascript" src="/vendor/threejs/TrackballControls.js"></script>
@@ -69,44 +94,6 @@
   <script type="text/javascript" src="/vendor/threejs/OBJLoader.js"></script>
   <script type="text/javascript" src="/vendor/threejs/MTLLoader.js"></script>
   <script type="text/javascript" src="/vendor/threejs/OBJMTLLoader.js"></script>
-  <!--<script type="text/javascript" src="/vendor/threejs/Projector.js"></script>-->
-  <!--<script type="text/javascript" src="/vendor/threejs/physijs/physi.js"></script>
-  <script type="text/javascript" src="/vendor/threejs/physijs/physijs_worker.js"></script>-->
-  <!--<script type="text/javascript" src="/fonts/droid/droid_sans_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_sans_mono_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_sans_bold.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_serif_regular.typeface.js"></script>
-  <script type="text/javascript" src="/fonts/droid/droid_serif_bold.typeface.js"></script>-->
-  <!--<script type="text/javascript" src="/fonts/Symbola_regular.typeface.js"></script>-->
-  <script type="text/javascript">
-    $(document).ready(function() {
-    $('#explore').addClass("active");
-    });
-
-     var opts = {
-        lines: 13, // The number of lines to draw
-        length: 10, // The length of each line
-        width: 5, // The line thickness
-        radius: 15, // The radius of the inner circle
-        corners: 1, // Corner roundness (0..1)
-        rotate: 0, // The rotation offset
-        direction: 1, // 1: clockwise, -1: counterclockwise
-        color: '#000', // #rgb or #rrggbb or array of colors
-        speed: 1, // Rounds per second
-        trail: 60, // Afterglow percentage
-        shadow: false, // Whether to render a shadow
-        hwaccel: false, // Whether to use hardware acceleration
-        className: 'spinner', // The CSS class to assign to the spinner
-        zIndex: 2e9, // The z-index (defaults to 2000000000)
-        top: '20%', // Top position relative to parent
-        left: '50%' // Left position relative to parent
-    };
-    var target = document.getElementById('spinner');
-    var spinner = new Spinner(opts).spin(target);
-    $("#loading_text").append("<span>Tervetuloa, hetkinen...</span>");
-
-  </script>
-  <!--<script type="text/javascript" src="/js/api_keys.js"></script>-->
   <script type="text/javascript" src="/js/3dmap.js"></script>
 </body>
 </html>
