@@ -19,4 +19,4 @@ they may have useful information and ideas how the traffic light data could be u
 
 You can see the application running at the http://liki3d.herokuapp.com/ page. The application visualizes the
 information mainly as 3D icons on the map. The icons can be obtained from http://liki3d.herokuapp.com/3d/models.html or via cloning this
-repository and use them under <a href="https://creativecommons.org/licenses/by/4.0/deed.en" target="_blank">CC-BY 4.0 -license</a>.
+repository and used under <a href="https://creativecommons.org/licenses/by/4.0/deed.en" target="_blank">CC-BY 4.0 -license</a>.
