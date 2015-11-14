@@ -11,6 +11,7 @@ var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
 var junction = require('./routes/junction');
+var junctions_info = require('./routes/junctions_info');
 var about = require('./routes/about');
 //var users = require('./routes/users');
 
@@ -29,6 +30,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/junction', junction);
+app.use('/junctions', junctions_info);
 app.use('/about', about);
 //app.use('/users', users);
 
