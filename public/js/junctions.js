@@ -6,15 +6,13 @@ var meta = undefined;
 var intersections = undefined;
 var devices = undefined;
 
-var device_types = [];
-
 var vehicle_signal_types = ["04", "06"];
 var pedestrian_signal_types = ["10"];
 
+var device_types = [];
+
 var meta_names = [];
-
 var signal_markers = [];
-
 var signal_devices = [];
 
 var osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -57,9 +55,45 @@ $(document).ready(function () {
 	.done();
 });
 
+function clearIntersectionView() {
+    $("#data_view span").remove();
+    $("#data_view select").remove();
+    $("#data_view h1").remove();
+    $("#data_view table").remove();
+    //$("#junctions_map div").remove();
+
+    for (var i = 0; i < signal_markers.length; i++) {
+	map.removeLayer(signal_markers[i]);
+    }
+
+    meta_names = [];
+    signal_markers = [];
+    signal_devices = [];
+}
+
 function createIntersectionView(city, junction_name) {
 
     $("#data_view").prepend('<h1>Liittymä ' + city + junction_name + '</h1>');
+    
+    var junctions_select = '<span>Valitse liittymä:</span><select id="junction_select" class="form-control">';
+    for (var i = 0; i < meta.length; i++) {
+	var selected = meta[i].location == (city + junction_name) ? ' selected' : '';
+	if (meta[i].location == city + junction_name) {
+	    console.log(meta[i].location);
+	}
+	junctions_select += '<option' + selected + '>' + meta[i].location + '</option>';
+    }
+    junctions_select += '</select>';
+    $("#data_view").prepend(junctions_select);
+
+    $("#junction_select").on('change', function (event) {
+	
+    	var name = $("#junction_select option:selected").text();
+	clearIntersectionView();
+	name = name.substring(3, name.length);
+	//console.log(name);
+	createIntersectionView('TRE', name);
+    });
 
     //
     // add meta data for the intersection
