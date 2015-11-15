@@ -6,8 +6,10 @@ var meta = undefined;
 var intersections = undefined;
 var devices = undefined;
 
-var vehicle_light_types = ["3 X 200", "1 X 200"];
-var pedestrian_light_types = ["2 X 200 JALANKULKIJA"];
+var device_types = [];
+
+var vehicle_signal_types = ["04", "06"];
+var pedestrian_signal_types = ["10"];
 
 
 var osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -46,6 +48,7 @@ $(document).ready(function () {
 	.then(getTrafficSignalDevices)
 	.then(getIntersections)
 	.then(function (data) { createIntersectionView('TRE', junction_name) })
+	.then(function () { collectDeviceStatistics([junction_name]); })
 	.done();
 });
 
@@ -115,9 +118,9 @@ function createIntersectionView(city, junction_name) {
     var all_contents = '<table class="table table-condensed table-bordered">';
     var first = true;
     for (var i = 0; i < devices.features.length; i++) {
+
 	if (devices.features[i].properties.LIITTYMAN_NIMI == junction_name) {
 	    //console.log(devices.features[i]);
-
 	    var device = devices.features[i];
 	    
 	    if (first) {
@@ -153,6 +156,94 @@ function createIntersectionView(city, junction_name) {
     //console.log(all_contents);
     all_contents += '</table>';
     $("#devices").append(all_contents);
+
+    showSignals(city, junction_name);
+}
+
+function showSignals(city, junction_name) {
+    //var vehicle_signal_types = ["3 X 200", "1 X 200"];
+    //var pedestrian_signal_types = ["2 X 200 JALANKULKIJA"];
+
+    var latlngs = [];
+
+    for (var i = 0; i < devices.features.length; i++) {
+        if (devices.features[i].properties.LIITTYMAN_NIMI == junction_name) {
+	    if (inVehicleSignalTypes(devices.features[i].properties.TYYPPI_KOODI)) {
+		console.log(devices.features[i]);
+		var device = devices.features[i];
+		var latlng = [device.geometry.coordinates[1], device.geometry.coordinates[0]];
+
+		var icon = new L.Icon({iconUrl: '/images/vehicle_signal.png', iconSize: [20, 20], iconAnchor: [10, 20]});
+		var marker = new L.Marker(latlng,
+					  {icon: icon, iconAngle: 0});
+		map.addLayer(marker);
+		
+		latlngs.push(latlng);
+	    }
+	    else if(inPedestrianSignalTypes(devices.features[i].properties.TYYPPI_KOODI)) {
+		console.log(devices.features[i]);
+                var device = devices.features[i];
+		var latlng = [device.geometry.coordinates[1], device.geometry.coordinates[0]];
+
+		var icon = new L.Icon({iconUrl: '/images/pedestrian_signal.png', iconSize: [20, 20], iconAnchor: [10, 20]});
+                var marker = new L.Marker(latlng, {icon: icon, iconAngle: 90});
+		map.addLayer(marker);
+
+                latlngs.push(latlng);
+	    }
+	}
+    }
+
+    var bounds = new L.LatLngBounds(latlngs);
+    map.fitBounds(bounds);
+}
+
+function inVehicleSignalTypes(device_type) {
+    for (var i = 0; i < vehicle_signal_types.length; i++) {
+	if (vehicle_signal_types[i] == device_type) {
+	    return true;
+	}
+    }
+}
+
+function inPedestrianSignalTypes(device_type) {
+    for (var i = 0; i < pedestrian_signal_types.length; i++) {
+        if (pedestrian_signal_types[i] == device_type) {
+	    //console.log("found");
+            return true;
+        }
+    }
+}
+
+function collectDeviceStatistics(junctions) {
+    for (var i = 0; i < devices.features.length; i++) {
+	for (var j = 0; j < junctions.length; j++) {
+	    if (devices.features[i].properties.LIITTYMAN_NIMI == junctions[j]) {
+
+    		var found = false;	
+		for (var k = 0; k < device_types.length; k++) {
+		    if (devices.features[i].properties.TYYPPI_KOODI == device_types[k].type_code) {
+			device_types[k].count++;
+			found = true;
+			break;
+		    }
+		}
+		if (!found) {
+		    if (devices.features[i].properties.TYYPPI_KOODI == null) {
+			console.log(devices.features[i]);
+		    }
+		    device_types.push({
+			type: devices.features[i].properties.TYYPPI,
+			type_code: devices.features[i].properties.TYYPPI_KOODI,
+			count: 1
+		    });
+		}
+	    }
+	}
+    }
+    //for (var j = 0; j < device_types.length; j++) {
+	//console.log(device_types[j].type_code + " " + device_types[j].type + " " + device_types[j].count);
+    //}
 }
 
 function getTampereMeta() {
