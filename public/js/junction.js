@@ -362,11 +362,16 @@ function updateTrafficLightsMeta() {
     $.getJSON(URL, function (data) {
 	//console.log(data);
 	
-	traffic_light_meta = data.Meta[0].signals;
+	for (var i = 0; i < data.Meta.length; i++) {
+	    if (data.Meta[i].location == "TRE306") {
+		traffic_light_meta = data.Meta[i].signals;
+		break;
+	    }
+	}
 
 	if (trafficLightIntervalID == undefined) {
 	    trafficLightIntervalID = setInterval(updateTrafficLights, 1000); // Update traffic lights states once per second
-	    setInterval(updateTrafficLightsMeta, 604800000); // Update meta information once per week
+	    setInterval(updateTrafficLightsMeta, 86400000); // Update meta information once per day
 	}
     });
 }
@@ -380,132 +385,142 @@ function updateTrafficLights() {
     $.getJSON(URL, function (data) {
 	//console.log(data);
 
-	var trafficLightStates = data.Data[0].rows[0].signalStates;
+	var trafficLightStates = undefined;
 
-	for (var i = 0; i < traffic_lights.length; i++) {
-	    var light_meshes = traffic_lights[i].children[0].children; // the actual lights (red, amber and green) are children of the up part that is child of the pole mesh
+	for (var i = 0; i < data.Data.length; i++) {
+	    if (data.Data[i].location == "TRE306") {
+		trafficLightStates = data.Data[i].rows[0].signalStates;
+		console.log(trafficLightStates);
+		break;
+	    }
+	}
 
-	    for (var j = 0; j < traffic_light_meta.length; j++) { // See the ITS Factory documents for the traffic light naming, and indexing info
-		if((traffic_lights[i].name.charAt(0) != '_' && traffic_lights[i].name.charAt(0) == traffic_light_meta[j].name) || 
-		   (traffic_lights[i].name.charAt(0) == '_' && traffic_lights[i].name.charAt(1) == traffic_light_meta[j].name.charAt(1))) {
+	if (trafficLightStates != undefined) {
+	    for (var i = 0; i < traffic_lights.length; i++) {
+		var light_meshes = traffic_lights[i].children[0].children; // the actual lights (red, amber and green) are children of the up part that is child of the pole mesh
+
+		for (var j = 0; j < traffic_light_meta.length; j++) { // See the ITS Factory documents for the traffic light naming, and indexing info
+		    if((traffic_lights[i].name.charAt(0) != '_' && traffic_lights[i].name.charAt(0) == traffic_light_meta[j].name) || 
+		       (traffic_lights[i].name.charAt(0) == '_' && traffic_lights[i].name.charAt(1) == traffic_light_meta[j].name.charAt(1))) {
 		    
-		    var state = data.Data[0].rows[0].signalStates.charAt(traffic_light_meta[j].index);
+			var state = trafficLightStates.charAt(traffic_light_meta[j].index);
 		    
-		    switch(state) {
-		    case '0': // red and amber
-			for (var k = 0; k < light_meshes.length; k++) {
-			    if (light_meshes[k].name == "red") {
-				light_meshes[k].material = redLightMaterial;
+			switch(state) {
+			case '0': // red and amber
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = redLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
+                                    light_meshes[k].material = amberLightMaterial;
+				}
+				else {
+				    light_meshes[k].material = blackLightMaterial;
+				}
 			    }
-			    else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = amberLightMaterial;
-                            }
-			    else {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-			}
-			break;
-		    case '1':
-		    case '3':
-		    case '4':
-		    case '5':
-		    case '6':
-		    case '7':
-		    case '8':
-		    case 'H': // green
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-				light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = greenLightMaterial;
-                            }
-                        }
-			break;
-		    case ':': // blinking green
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-				if (light_meshes[k].material == greenLightMaterial) {
+			    break;
+			case '1':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case 'H': // green
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
 				    light_meshes[k].material = blackLightMaterial;
 				}
 				else {
-                                    light_meshes[k].material = greenLightMaterial;
+				    light_meshes[k].material = greenLightMaterial;
 				}
-                            }
-                        }
-			break;
-		    case ';': // flashing amber
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-				if (light_meshes[k].material == amberLightMaterial) {
-                                    light_meshes[k].material = blackLightMaterial;
+			    }
+			    break;
+			case ':': // blinking green
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
+				    light_meshes[k].material = blackLightMaterial;
 				}
 				else {
+				    if (light_meshes[k].material == greenLightMaterial) {
+					light_meshes[k].material = blackLightMaterial;
+				    }
+				    else {
+					light_meshes[k].material = greenLightMaterial;
+				    }
+				}
+			    }
+			    break;
+			case ';': // flashing amber
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
+				    if (light_meshes[k].material == amberLightMaterial) {
+					light_meshes[k].material = blackLightMaterial;
+				    }
+				    else {
+					light_meshes[k].material = amberLightMaterial;
+				    }
+				}
+				else {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+			    }
+			    break;
+			case '<':
+			case '=':
+			case '>':
+			case 'I': // amber
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
 				    light_meshes[k].material = amberLightMaterial;
 				}
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-			break;
-		    case '<':
-		    case '=':
-		    case '>':
-		    case 'I': // amber
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = amberLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-                        break;
-		    case '9':
-		    case '?':
-		    case 'A':
-		    case 'B':
-		    case 'C':
-		    case 'D':
-		    case 'E':
-		    case 'F':
-		    case 'G':
-		    case 'J': // red
-			for (var k = 0; k < light_meshes.length; k++) {
-                            if (light_meshes[k].name == "red") {
-                                light_meshes[k].material = redLightMaterial;
-                            }
-                            else if (light_meshes[k].name == "amber") {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                            else {
-                                light_meshes[k].material = blackLightMaterial;
-                            }
-                        }
-			break;
-		    default:
-			//nothing to do, state undefined
+				else {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+			    }
+			    break;
+			case '9':
+			case '?':
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+			case 'G':
+			case 'J': // red
+			    for (var k = 0; k < light_meshes.length; k++) {
+				if (light_meshes[k].name == "red") {
+				    light_meshes[k].material = redLightMaterial;
+				}
+				else if (light_meshes[k].name == "amber") {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+				else {
+				    light_meshes[k].material = blackLightMaterial;
+				}
+			    }
+			    break;
+			default:
+			    //nothing to do, state undefined
+			}
+			//break;
 		    }
-		    break;
 		}
-	    }
-        }
+            }
+	}
     });
 }
 
