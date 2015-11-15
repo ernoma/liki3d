@@ -11,6 +11,11 @@ var device_types = [];
 var vehicle_signal_types = ["04", "06"];
 var pedestrian_signal_types = ["10"];
 
+var meta_names = [];
+
+var signal_markers = [];
+
+var signal_devices = [];
 
 var osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
@@ -67,6 +72,7 @@ function createIntersectionView(city, junction_name) {
 	    for (var j = 0; j < meta[i].signals.length; j++) {
 		header += '<th>' + meta[i].signals[j].index + '</th>';
 		content += '<td>' + meta[i].signals[j].name + '</td>';
+		meta_names.push(meta[i].signals[j].name);
 	    }
 	    header += '</tr>';
 	    content += '</tr>';
@@ -122,7 +128,7 @@ function createIntersectionView(city, junction_name) {
 	if (devices.features[i].properties.LIITTYMAN_NIMI == junction_name) {
 	    //console.log(devices.features[i]);
 	    var device = devices.features[i];
-	    
+
 	    if (first) {
 		var contents = '<tr>';
 		contents += '<th>id</th>';
@@ -166,36 +172,114 @@ function showSignals(city, junction_name) {
 
     var latlngs = [];
 
+    var all_contents = '<table class="table .table-striped">';
+    all_contents += '<tr><th>vehicle / pedestrian</th><th>laite_id</th><th>meta name</th><th>angle</th></tr>';
+
     for (var i = 0; i < devices.features.length; i++) {
         if (devices.features[i].properties.LIITTYMAN_NIMI == junction_name) {
 	    if (inVehicleSignalTypes(devices.features[i].properties.TYYPPI_KOODI)) {
-		console.log(devices.features[i]);
+		//console.log(devices.features[i]);
 		var device = devices.features[i];
+		signal_devices.push(device);
 		var latlng = [device.geometry.coordinates[1], device.geometry.coordinates[0]];
-
 		var icon = new L.Icon({iconUrl: '/images/vehicle_signal.png', iconSize: [20, 20], iconAnchor: [10, 20]});
-		var marker = new L.Marker(latlng,
-					  {icon: icon, iconAngle: 0});
+		var marker = new L.Marker(latlng, {icon: icon, iconAngle: 0, title: device.properties.LAITE_ID });
 		map.addLayer(marker);
-		
+		signal_markers.push(marker);
 		latlngs.push(latlng);
+		
+		row_content = '<tr><td>v</td><td>' + device.properties.LAITE_ID + '</td><td>';
+		// TODO add name select
+		row_content += '<select class="form-control" id="signal_meta_name_' + device.properties.LAITE_ID + '">';
+		for (var j = 0; j < meta_names.length; j++) {
+		    if (meta_names[j].charAt(0) != '_') {
+                        row_content += '<option>' + meta_names[j] + '</option>';
+                    }
+		}
+		row_content += '</select></td><td>'
+		// add range slider
+		row_content += '<span>0</span> <input class="signal_angle_slider" id="signal_angle_slider_' + device.properties.LAITE_ID + '" type="text" data-slider-min="0" data-slider-max="360" data-slider-step="1" data-slider-value="0"> <span>360</span>';
+		row_content += '</td></tr>';
+		all_contents += row_content;
 	    }
 	    else if(inPedestrianSignalTypes(devices.features[i].properties.TYYPPI_KOODI)) {
-		console.log(devices.features[i]);
+		//console.log(devices.features[i]);
                 var device = devices.features[i];
+		signal_devices.push(device);
 		var latlng = [device.geometry.coordinates[1], device.geometry.coordinates[0]];
-
-		var icon = new L.Icon({iconUrl: '/images/pedestrian_signal.png', iconSize: [20, 20], iconAnchor: [10, 20]});
-                var marker = new L.Marker(latlng, {icon: icon, iconAngle: 90});
+		var icon = new L.Icon({iconUrl: '/images/pedestrian_signal.png', iconSize: [20, 20], iconAnchor: [10, 20]})
+                var marker = new L.Marker(latlng, {icon: icon, iconAngle: 90, title: device.properties.LAITE_ID });
 		map.addLayer(marker);
-
+		signal_markers.push(marker);
                 latlngs.push(latlng);
+
+		row_content = '<tr><td>p</td><td>' + device.properties.LAITE_ID + '</td><td>';
+		// TODO add name select
+		row_content += '<select class="form-control" id="signal_meta_name_' + device.properties.LAITE_ID + '">';
+		for (var j = 0; j < meta_names.length; j++) {
+		    if (meta_names[j].charAt(0) == '_') {
+			row_content += '<option>' + meta_names[j] + '</option>';
+		    }
+		}
+		row_content += '</select></td><td>'
+		// add range slider
+		row_content += '<span>0</span> <input class="signal_angle_slider" id="signal_angle_slider_' + device.properties.LAITE_ID + '" type="text" data-slider-min="0" data-slider-max="360" data-slider-step="1" data-slider-value="90"> <span>360</span>';
+		row_content += '</td></tr>';
+		all_contents += row_content;
+
 	    }
 	}
+	// TODO: add laite_id for each marker, add row for each laite_id with place for meta_name and slider to adjust angle, save button 
+	
     }
 
     var bounds = new L.LatLngBounds(latlngs);
     map.fitBounds(bounds);
+
+    all_contents += '</table>';
+    $("#signals").append(all_contents);
+
+    $('.signal_angle_slider').slider();
+    $('.signal_angle_slider').on('slide', function (event) {
+	//console.log(event);
+	var parts = this.id.split('_');
+	var id = parts[parts.length-1];
+	//console.log(id);
+	for (var i = 0; i < signal_markers.length; i++) {
+	    //console.log(signal_markers[i]);
+	    if (signal_markers[i].options.title == id) {
+		//console.log("found");
+		signal_markers[i].setIconAngle(event.value);
+		break;
+	    } 
+	}
+	//$('#signal_angle_input_' + device.properties.LAITE_ID).text(event.value);
+    });
+    $("#signals_save_button").on('click', function() {
+	// TODO send signal data to the server where it is stored to the csv file
+	signals = [];
+	for (var i = 0; i < signal_devices.length; i++) {
+	    //console.log($("#signal_meta_name_" + signal_devices[i].properties.LAITE_ID + " option:selected").text());
+	    var meta_name = $("#signal_meta_name_" + signal_devices[i].properties.LAITE_ID + " option:selected").text();
+	    var angle = $("#signal_angle_slider_" + signal_devices[i].properties.LAITE_ID).attr('value');
+	    console.log(signal_devices[i].properties.LAITE_ID + "," + meta_name + "," + angle);
+	    signals.push({
+		id: signal_devices[i].properties.LAITE_ID,
+		meta_name: meta_name,
+		angle: angle
+	    });
+	}
+	var data = {
+	    city: city,
+	    junction: junction_name,
+	    signals: signals
+	};
+	$.ajax("junction", {
+	    data: JSON.stringify(data),
+	    contentType : 'application/json',
+	    type : 'POST'
+	});
+    });
 }
 
 function inVehicleSignalTypes(device_type) {
